@@ -1,0 +1,111 @@
+:host {
+  position: fixed;
+  inset: 0;
+  display: block;
+  background: #030303;
+  color: #e9e6dc;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.camera-feed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.camera-feed.on {
+  opacity: 1;
+}
+
+.intro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 2rem;
+  pointer-events: none;
+}
+
+h1 {
+  font-family: Georgia, 'Iowan Old Style', serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+  letter-spacing: 0.01em;
+  margin: 0 0 0.4rem;
+  color: #f2efe6;
+}
+
+p {
+  font-family: system-ui, sans-serif;
+  margin: 0.2rem 0;
+  opacity: 0.78;
+  font-size: 1rem;
+}
+
+.small {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  margin-top: 1.4rem;
+  max-width: 22rem;
+}
+
+.privacy {
+  font-size: 0.72rem;
+  opacity: 0.32;
+  margin-top: 2.2rem;
+}
+
+.corner-control {
+  position: absolute;
+  pointer-events: auto;
+}
+.location-control {
+  left: max(1rem, env(safe-area-inset-left));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.camera-toggle {
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid rgba(233, 230, 220, 0.15);
+  background: rgba(20, 18, 14, 0.5);
+  font-size: 1.1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.chip {
+  font: inherit;
+  font-size: 0.78rem;
+  color: #e9e6dc;
+  background: rgba(20, 18, 14, 0.6);
+  border: 1px solid rgba(233, 230, 220, 0.15);
+  border-radius: 999px;
+  padding: 0.5em 0.9em;
+  cursor: pointer;
+}
+
+.camera-error {
+  position: absolute;
+  top: max(4rem, calc(env(safe-area-inset-top) + 3.5rem));
+  right: max(1rem, env(safe-area-inset-right));
+  font-size: 0.75rem;
+  opacity: 0.7;
+  max-width: 12rem;
+  text-align: right;
+}

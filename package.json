@@ -1,0 +1,45 @@
+{
+  "name": "find-the-moon",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "lint": "ng lint",
+    "format": "prettier --write \"src/**/*.{ts,html,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css}\""
+  },
+  "private": true,
+  "packageManager": "npm@10.9.7",
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "@angular/service-worker": "^21.2.0",
+    "astronomy-engine": "^2.1.19",
+    "geomagnetism": "^0.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular-eslint/builder": "^21.4.0",
+    "@angular-eslint/schematics": "^21.4.0",
+    "@angular/build": "^21.2.24",
+    "@angular/cli": "^21.2.24",
+    "@angular/compiler-cli": "^21.2.0",
+    "@eslint/js": "^10.0.1",
+    "angular-eslint": "^22.5.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^4.0.8"
+  }
+}

@@ -1,0 +1,54 @@
+<video #cameraVideo class="camera-feed" [class.on]="cameraOn()" playsinline muted></video>
+
+<app-sky-view (moonVisible)="moonSeen.set(true)" />
+
+@if (showIntro()) {
+  <main class="intro">
+    <h1>Find the moon.</h1>
+    <p>Move your phone until it appears.</p>
+    @switch (gate()) {
+      @case ('needs-tap') {
+        <p class="small">Tap anywhere to begin</p>
+      }
+      @case ('motion-denied') {
+        <p class="small">
+          Motion access was denied. Reload the page and choose Allow when Safari asks, to find the
+          moon.
+        </p>
+      }
+    }
+    @if (needsDragFallback()) {
+      <p class="small">This device can't tell which way it's pointing — drag the sky instead.</p>
+    }
+    @if (showCompassHint()) {
+      <p class="small">Compass is unsteady — wave your phone in a figure eight.</p>
+    }
+    <p class="privacy">Your location stays on your phone.</p>
+  </main>
+}
+
+@if (needsLocationFallback() && gate() === 'running') {
+  <div class="corner-control location-control">
+    @if (showCityPicker()) {
+      <app-city-picker (pick)="onCitySelected($event)" />
+    } @else {
+      <button type="button" class="chip" (click)="showCityPicker.set(true)">Set location</button>
+    }
+  </div>
+}
+
+<button
+  type="button"
+  class="corner-control camera-toggle"
+  (click)="toggleCamera()"
+  [attr.aria-pressed]="cameraOn()"
+>
+  {{ cameraOn() ? '📷' : '🌌' }}
+</button>
+@if (cameraError(); as err) {
+  <p class="camera-error">{{ err }}</p>
+}
+
+@if (debug) {
+  <app-debug-overlay />
+}
