@@ -6,5 +6,4 @@ import { App } from './app/app';
 // Initialize Vercel Analytics
 Analytics.inject();
 
-
 bootstrapApplication(App, appConfig).catch((err) => console.error(err));
