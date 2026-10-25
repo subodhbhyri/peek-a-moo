@@ -123,7 +123,7 @@ export class App {
 
     const onVisibility = () => {
       if (document.visibilityState !== 'visible') return;
-      this.engine.recomputeMoon();
+      this.engine.recompute();
       this.wakeLock.reacquireIfWanted();
     };
     document.addEventListener('visibilitychange', onVisibility);

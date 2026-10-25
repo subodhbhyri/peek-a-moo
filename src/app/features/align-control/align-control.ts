@@ -10,6 +10,7 @@ import { computeYawCorrection } from '../../core/calibration/alignment';
 import { AlignmentService } from '../../core/calibration/alignment.service';
 import { SkyEngineService } from '../../core/engine/sky-engine.service';
 import { CameraFovService } from '../../core/projection/camera-fov.service';
+import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { OrientationService } from '../../core/sensors/orientation.service';
 
 const BIG_CORRECTION_DEG = 45;
@@ -30,15 +31,15 @@ const TOAST_MS = 3000;
 
     @if (mode() !== 'idle') {
       <div class="crosshair" aria-hidden="true"></div>
-      <div class="panel" role="dialog" aria-label="Align with the real Moon">
+      <div class="panel" role="dialog" [attr.aria-label]="'Align with the real ' + name()">
         @if (mode() === 'confirming') {
-          <p>That's a big correction ({{ pendingText() }}°). Sure that's the Moon?</p>
+          <p>That's a big correction ({{ pendingText() }}°). Sure that's the {{ name() }}?</p>
           <div class="row">
             <button type="button" class="chip" (click)="commit()">Yes, lock it</button>
             <button type="button" class="chip" (click)="cancel()">Cancel</button>
           </div>
         } @else {
-          <p>Point the center at the real Moon, then tap Lock.</p>
+          <p>Point the center at the real {{ name() }}, then tap Lock.</p>
           <div class="row">
             <button type="button" class="chip primary" (click)="lock()">Lock</button>
             <button type="button" class="chip" (click)="cancel()">Cancel</button>
@@ -50,7 +51,7 @@ const TOAST_MS = 3000;
         <button
           type="button"
           class="align-button"
-          aria-label="Align with the real Moon"
+          [attr.aria-label]="'Align with the real ' + name()"
           (click)="start()"
         >
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -172,6 +173,7 @@ const TOAST_MS = 3000;
 export class AlignControl {
   private readonly orientation = inject(OrientationService);
   private readonly engine = inject(SkyEngineService);
+  private readonly selection = inject(TargetSelectionService);
   private readonly cameraFov = inject(CameraFovService);
   protected readonly alignment = inject(AlignmentService);
 
@@ -183,10 +185,12 @@ export class AlignControl {
   protected readonly pendingText = computed(() => Math.round(Math.abs(this.pending() ?? 0)));
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Sensors are driving the view and the Moon is actually up there to be aligned with. */
+  protected readonly name = computed(() => this.selection.selected().name);
+
+  /** Sensors are driving the view and the target is actually up there to be aligned with. */
   protected readonly canAlign = computed(() => {
-    const moon = this.engine.moon();
-    return this.orientation.status() === 'active' && moon !== null && moon.altitudeDeg > 0;
+    const target = this.engine.target();
+    return this.orientation.status() === 'active' && target !== null && target.altitudeDeg > 0;
   });
 
   constructor() {
@@ -207,9 +211,9 @@ export class AlignControl {
 
   protected lock(): void {
     const basis = this.orientation.uncorrectedBasis();
-    const moon = this.engine.moon();
-    if (!basis || !moon) return this.cancel();
-    const yaw = computeYawCorrection(basis, moon.direction);
+    const target = this.engine.target();
+    if (!basis || !target) return this.cancel();
+    const yaw = computeYawCorrection(basis, target.direction);
     this.pending.set(yaw);
     if (Math.abs(yaw) > BIG_CORRECTION_DEG) this.mode.set('confirming');
     else this.commit();

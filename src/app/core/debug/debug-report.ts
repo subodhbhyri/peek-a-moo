@@ -23,7 +23,8 @@ export interface DebugReportInput {
   longSideFovDeg: number;
   raw: { alpha: number; beta: number; gamma: number; webkitCompassHeading: number | null } | null;
   pointing: { az: number; alt: number; roll: number } | null;
-  moon: { az: number; alt: number } | null;
+  targetId: string;
+  target: { id: string; az: number; alt: number } | null;
   appVersion: string;
 }
 
@@ -36,7 +37,7 @@ const round = (v: number | null | undefined, places: number): number | null => {
 /** Plain JSON-able snapshot for pasting back from a field test. Location is deliberately coarse (0.1°). */
 export function buildDebugReport(i: DebugReportInput): Record<string, unknown> {
   const p = i.pointing;
-  const m = i.moon;
+  const m = i.target;
   return {
     timestamp: i.now.toISOString(),
     userAgent: i.userAgent,
@@ -67,7 +68,8 @@ export function buildDebugReport(i: DebugReportInput): Record<string, unknown> {
       webkitCompassHeading: round(i.raw.webkitCompassHeading, 2),
     },
     pointing: p && { az: round(p.az, 2), alt: round(p.alt, 2), roll: round(p.roll, 2) },
-    moon: m && { az: round(m.az, 2), alt: round(m.alt, 2) },
+    targetId: i.targetId,
+    target: m && { id: m.id, az: round(m.az, 2), alt: round(m.alt, 2) },
     delta: p && m && { az: round(wrap180(m.az - p.az), 2), alt: round(m.alt - p.alt, 2) },
     appVersion: i.appVersion,
   };

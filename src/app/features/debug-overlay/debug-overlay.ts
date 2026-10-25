@@ -5,6 +5,7 @@ import { LocationService } from '../../core/sensors/location.service';
 import { SkyEngineService } from '../../core/engine/sky-engine.service';
 import { AlignmentService } from '../../core/calibration/alignment.service';
 import { buildDebugReport } from '../../core/debug/debug-report';
+import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { wrap180 } from '../../core/math/vec3';
 import { CameraFovService } from '../../core/projection/camera-fov.service';
 
@@ -12,7 +13,7 @@ import { CameraFovService } from '../../core/projection/camera-fov.service';
  * Visit /?debug. The numbers that matter for verifying the pipeline on a real phone:
  *  - "pointing" should match the direction your phone's back faces (check with a compass app,
  *    which shows MAGNETIC heading: pointing az ≈ compass app + declination).
- *  - "Δ to moon" should hit ~0/0 when you look at the real Moon.
+ *  - "Δ to target" should hit ~0/0 when you look at the real target.
  *  - iOS: "offset spread" should stay near 0; "calib" should read calibrated after ~1 s flat.
  *  - "Copy report" puts a JSON snapshot on the clipboard for pasting back into a planning chat.
  */
@@ -42,10 +43,12 @@ camera  {{ fov.cameraOn() ? 'on' : 'off' }}  vFOV {{
 pointing az {{ d()?.pointingAz | number: '1.1-1' }}  alt {{
         d()?.pointingAlt | number: '1.1-1'
       }}  roll {{ d()?.roll | number: '1.0-0' }}
-moon     az {{ moon()?.azimuthDeg | number: '1.1-1' }}  alt {{
-        moon()?.altitudeDeg | number: '1.1-1'
-      }}  {{ moon()?.phaseName }} {{ (moon()?.illuminatedFraction ?? 0) * 100 | number: '1.0-0' }}%
-Δ to moon az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}</pre>
+target   {{ target()?.id }} az {{ target()?.azimuthDeg | number: '1.1-1' }}  alt {{
+        target()?.altitudeDeg | number: '1.1-1'
+      }}  {{ target()?.phase?.name }} {{
+        (target()?.phase?.illuminatedFraction ?? 0) * 100 | number: '1.0-0'
+      }}%
+Δ to target az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}</pre>
     <button type="button" (click)="copyReport()">{{ copied() ? 'Copied!' : 'Copy report' }}</button>
     @if (fallbackText(); as text) {
       <textarea readonly rows="8" (focus)="select($event)" [value]="text"></textarea>
@@ -97,10 +100,11 @@ moon     az {{ moon()?.azimuthDeg | number: '1.1-1' }}  alt {{
 export class DebugOverlay {
   protected readonly ori = inject(OrientationService);
   protected readonly loc = inject(LocationService);
-  protected readonly moon = inject(SkyEngineService).moon;
+  protected readonly target = inject(SkyEngineService).target;
   protected readonly d = this.ori.debug;
   protected readonly fov = inject(CameraFovService);
   private readonly alignment = inject(AlignmentService);
+  private readonly selection = inject(TargetSelectionService);
   protected readonly copied = signal(false);
   protected readonly fallbackText = signal<string | null>(null);
   /** Loaded up front: clipboard writes must happen synchronously inside the tap (Safari). */
@@ -129,7 +133,7 @@ export class DebugOverlay {
   protected copyReport(): void {
     const d = this.d();
     const pos = this.loc.position();
-    const m = this.moon();
+    const m = this.target();
     const report = buildDebugReport({
       now: new Date(),
       userAgent: navigator.userAgent,
@@ -160,7 +164,8 @@ export class DebugOverlay {
         webkitCompassHeading: d.compassHeading,
       },
       pointing: d && { az: d.pointingAz, alt: d.pointingAlt, roll: d.roll },
-      moon: m && { az: m.azimuthDeg, alt: m.altitudeDeg },
+      targetId: m?.id ?? this.selection.selectedId(),
+      target: m && { id: m.id, az: m.azimuthDeg, alt: m.altitudeDeg },
       appVersion: this.appVersion,
     });
     const text = JSON.stringify(report, null, 2);
@@ -182,7 +187,7 @@ export class DebugOverlay {
 
   protected readonly delta = computed(() => {
     const d = this.d(),
-      m = this.moon();
+      m = this.target();
     if (!d || !m) return null;
     return { az: wrap180(m.azimuthDeg - d.pointingAz), alt: m.altitudeDeg - d.pointingAlt };
   });

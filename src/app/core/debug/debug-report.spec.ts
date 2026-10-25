@@ -29,7 +29,8 @@ const input: DebugReportInput = {
   longSideFovDeg: 69,
   raw: { alpha: 10.123, beta: 90, gamma: 0, webkitCompassHeading: 123.456 },
   pointing: { az: 350, alt: 10, roll: 1 },
-  moon: { az: 5, alt: 12 },
+  targetId: 'moon',
+  target: { id: 'moon', az: 5, alt: 12 },
   appVersion: 'abc1234',
 };
 
@@ -51,7 +52,13 @@ describe('buildDebugReport', () => {
   });
 
   it('survives missing sensor data and round-trips through JSON', () => {
-    const r = buildDebugReport({ ...input, raw: null, pointing: null, moon: null, location: null });
+    const r = buildDebugReport({
+      ...input,
+      raw: null,
+      pointing: null,
+      target: null,
+      location: null,
+    });
     expect(r['delta']).toBeNull();
     expect(r['location']).toBeNull();
     expect(JSON.parse(JSON.stringify(r))['appVersion']).toBe('abc1234');
@@ -79,7 +86,8 @@ describe('buildDebugReport', () => {
       'longSideFovDeg',
       'raw',
       'pointing',
-      'moon',
+      'targetId',
+      'target',
       'delta',
       'appVersion',
     ]) {

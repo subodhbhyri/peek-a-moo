@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { FindEvent } from '../tracking/find-tracker';
+import { TargetFindEvent } from './sky-engine.service';
 import { LocationService } from '../sensors/location.service';
 import { OrientationService } from '../sensors/orientation.service';
 import { Viewport } from '../projection/projection';
@@ -12,10 +12,10 @@ describe('SkyEngineService: tracker pause (align mode)', () => {
     TestBed.inject(LocationService).setManual({ latitude: 40, longitude: -75 });
     const engine = TestBed.inject(SkyEngineService);
     TestBed.tick(); // flush the effect that computes the Moon
-    const moon = engine.moon()!;
+    const moon = engine.target()!;
     // Point the camera straight at the Moon so it is always centered.
     TestBed.inject(OrientationService).setManualPose(moon.azimuthDeg, moon.altitudeDeg);
-    const events: FindEvent[] = [];
+    const events: TargetFindEvent[] = [];
     engine.events$.subscribe((e) => events.push(e));
     return { engine, events };
   }
@@ -25,6 +25,7 @@ describe('SkyEngineService: tracker pause (align mode)', () => {
     engine.tick(0, viewport);
     engine.tick(500, viewport);
     expect(events.map((e) => e.type)).toEqual(['found']);
+    expect(events[0].targetId).toBe('moon');
   });
 
   it('emits nothing while paused, then resumes with a fresh search timer', () => {
@@ -43,7 +44,7 @@ describe('SkyEngineService: tracker pause (align mode)', () => {
     expect(first.searchElapsedMs).toBe(0); // fresh timer, not 6 s
     engine.tick(6500, viewport);
     expect(events).toHaveLength(1);
-    const found = events[0] as Extract<FindEvent, { type: 'found' }>;
+    const found = events[0] as Extract<TargetFindEvent, { type: 'found' }>;
     expect(found.durationMs).toBe(500); // measured from resume, not from session start
     expect(found.findIndex).toBe(1);
   });

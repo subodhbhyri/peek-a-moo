@@ -49,9 +49,9 @@ const CASES: Case[] = [
 ];
 
 // Adapter: the only lines that follow renames in the engine's public API.
-const getTarget = (engine: SkyEngineService) => engine.moon();
-const recompute = (engine: SkyEngineService, date: Date) => engine.recomputeMoon(date);
-const frameTarget = (frame: ReturnType<SkyEngineService['tick']> & object) => frame.moon;
+const getTarget = (engine: SkyEngineService) => engine.target();
+const recompute = (engine: SkyEngineService, date: Date) => engine.recompute(date);
+const frameTarget = (frame: ReturnType<SkyEngineService['tick']> & object) => frame.target;
 
 /** NaN / Infinity do not survive JSON, so pin them as strings. */
 const safe = (v: number): number | string => (Number.isFinite(v) ? v : String(v));
@@ -68,10 +68,10 @@ function observe(c: Case) {
     azimuthDeg: m.azimuthDeg,
     altitudeDeg: m.altitudeDeg,
     direction: [...m.direction],
-    sunDirection: [...m.sunDirection],
-    phaseName: m.phaseName,
-    illuminatedFraction: m.illuminatedFraction,
-    angularDiameterDeg: m.angularDiameterDeg,
+    sunDirection: [...m.sunDirection!],
+    phaseName: m.phase!.name,
+    illuminatedFraction: m.phase!.illuminatedFraction,
+    angularDiameterDeg: m.angularSizeDeg,
   };
 
   let t = 0;

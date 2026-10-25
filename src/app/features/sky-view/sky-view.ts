@@ -17,7 +17,8 @@ import { SkyEngineService, SkyFrame } from '../../core/engine/sky-engine.service
 import { LookAngles, dragToLook, keyToLook } from '../../core/sensors/drag-look';
 import { OrientationService } from '../../core/sensors/orientation.service';
 import { Viewport, edgeGlowPoint } from '../../core/projection/projection';
-import { drawMoonPhase } from '../../core/render/moon-phase';
+import { drawTarget } from '../../core/render/draw-target';
+import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { CornerStat } from '../corner-stat/corner-stat';
 import { MoonFace } from '../moon-face/moon-face';
 
@@ -72,6 +73,7 @@ export class SkyView implements AfterViewInit {
   private readonly engine = inject(SkyEngineService);
   private readonly orientation = inject(OrientationService);
   private readonly stats = inject(StatsService);
+  private readonly selection = inject(TargetSelectionService);
   private readonly cameraFov = inject(CameraFovService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -104,7 +106,7 @@ export class SkyView implements AfterViewInit {
     this.resize(canvas);
 
     const sub = this.engine.events$.subscribe((event) => {
-      if (event.type === 'found') this.onFound(event.durationMs, event.findIndex);
+      if (event.type === 'found') this.onFound(event.targetId, event.durationMs, event.findIndex);
       else this.faceRef().clearSpeech();
     });
 
@@ -150,9 +152,12 @@ export class SkyView implements AfterViewInit {
     if (!this.shouldUseDragMode()) return;
     this.dragging = true;
     this.lastPointer = { x: e.clientX, y: e.clientY };
-    const moon = this.engine.moon();
-    if (this.orientation.status() !== 'manual' && moon) {
-      this.manualLook = { azimuthDeg: moon.azimuthDeg, altitudeDeg: Math.max(0, moon.altitudeDeg) };
+    const target = this.engine.target();
+    if (this.orientation.status() !== 'manual' && target) {
+      this.manualLook = {
+        azimuthDeg: target.azimuthDeg,
+        altitudeDeg: Math.max(0, target.altitudeDeg),
+      };
     }
   }
 
@@ -170,23 +175,29 @@ export class SkyView implements AfterViewInit {
     this.lastPointer = null;
   }
 
-  private onFound(durationMs: number, findIndex: number): void {
-    const moon = this.engine.moon();
-    if (!moon) return;
-    const updated = this.stats.recordFind(durationMs);
-    const ctx: FindLineContext = {
-      sessionFindIndex: findIndex,
-      lifetimeFindCount: updated.lifetimeFinds,
-      durationMs,
-      moonPhase: moon.phaseName,
-      moonAltitudeDeg: moon.altitudeDeg,
-      sunAltitudeDeg: moon.sunAltitudeDeg,
-      localHour: new Date().getHours(),
-    };
-    const { text } = selectFindLine(ctx, this.stats.stats().recentLines);
-    this.stats.recordLineShown(text);
-    this.faceRef().say(text);
-    this.cornerRef().show({ durationMs, emoji: phaseEmoji(moon.phaseName) });
+  private onFound(targetId: string, durationMs: number, findIndex: number): void {
+    const target = this.engine.target();
+    if (!target || target.id !== targetId) return;
+    const updated = this.stats.recordFind(targetId, durationMs);
+    // The Moon is the only target with a face, lines and a phase emoji so far (Phase 7 adds the rest).
+    const phase = target.phase;
+    if (this.selection.selected().kind === 'moon' && phase) {
+      const ctx: FindLineContext = {
+        sessionFindIndex: findIndex,
+        lifetimeFindCount: updated.lifetime.finds,
+        durationMs,
+        moonPhase: phase.name,
+        moonAltitudeDeg: target.altitudeDeg,
+        sunAltitudeDeg: target.sunAltitudeDeg ?? 0,
+        localHour: new Date().getHours(),
+      };
+      const { text } = selectFindLine(ctx, this.stats.stats().recentLines);
+      this.stats.recordLineShown(text);
+      this.faceRef().say(text);
+      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name) });
+    } else {
+      this.cornerRef().show({ durationMs, emoji: '✨' });
+    }
     try {
       navigator.vibrate?.(30);
     } catch {
@@ -251,8 +262,13 @@ export class SkyView implements AfterViewInit {
       this.moonVisible.emit();
     }
     const { x, y } = frame.projection;
-    drawMoonPhase(ctx, x, y, frame.radiusPx, frame.moon.illuminatedFraction, frame.brightLimbRad);
-    this.faceRef().update(x, y, frame.radiusPx, frame.phase === 'found');
+    drawTarget(ctx, frame);
+    this.faceRef().update(
+      x,
+      y,
+      frame.radiusPx,
+      frame.def.kind === 'moon' && frame.phase === 'found',
+    );
   }
 
   private updateEdgeGlow(frame: SkyFrame): void {
