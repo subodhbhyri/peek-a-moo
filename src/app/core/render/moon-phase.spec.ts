@@ -1,30 +1,11 @@
 import { drawMoonPhase } from './moon-phase';
+import { recordingContext } from './testing/recording-context';
 
 /**
  * jsdom has no canvas, so "pixel identity" is checked as call identity: a recording context logs every
  * method call (with arguments) and every style assignment, and the log for the Moon must equal the one
  * captured from the pre-Phase-3 implementation. Same calls with the same arguments draw the same pixels.
  */
-export function recordingContext(): { ctx: CanvasRenderingContext2D; log: string[] } {
-  const log: string[] = [];
-  const num = (v: unknown) => (typeof v === 'number' ? Number(v.toFixed(9)) : v);
-  const ctx = new Proxy(
-    {},
-    {
-      get(_t, prop: string) {
-        return (...args: unknown[]) => {
-          log.push(`${prop}(${args.map((a) => JSON.stringify(num(a))).join(',')})`);
-        };
-      },
-      set(_t, prop: string, value: unknown) {
-        log.push(`${prop}=${JSON.stringify(value)}`);
-        return true;
-      },
-    },
-  ) as unknown as CanvasRenderingContext2D;
-  return { ctx, log };
-}
-
 const CASES: [string, number, number, number, number, number][] = [
   ['crescent', 120.5, 340.25, 43.69, 0.0785, -2.077],
   ['quarter', 200, 400, 50, 0.5, 0.4],

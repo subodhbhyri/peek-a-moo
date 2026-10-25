@@ -63,3 +63,27 @@ describe('SkyEngineService: tracker pause (align mode)', () => {
     expect(events).toEqual([]);
   });
 });
+
+describe('SkyEngineService: planets via ?target=', () => {
+  afterEach(() => history.replaceState(null, '', '/'));
+
+  it('runs the whole find flow for Jupiter, with its own id on the events', () => {
+    history.replaceState(null, '', '/?target=jupiter');
+    TestBed.inject(LocationService).setManual({ latitude: 39.6, longitude: -104.7, heightM: 1800 });
+    const engine = TestBed.inject(SkyEngineService);
+    TestBed.tick();
+    const jupiter = engine.target()!;
+    expect(jupiter.id).toBe('jupiter');
+    TestBed.inject(OrientationService).setManualPose(jupiter.azimuthDeg, jupiter.altitudeDeg);
+    const events: TargetFindEvent[] = [];
+    engine.events$.subscribe((e) => events.push(e));
+
+    const f = engine.tick(0, viewport)!;
+    expect(f.def.id).toBe('jupiter');
+    expect(f.brightLimbRad).not.toBeNull(); // planets carry a sun direction
+    expect(Number.isFinite(f.skyNorthRad)).toBe(true);
+    expect(f.radiusPx).toBeGreaterThanOrEqual(0.035 * viewport.width);
+    engine.tick(500, viewport);
+    expect(events.map((e) => [e.type, e.targetId])).toEqual([['found', 'jupiter']]);
+  });
+});

@@ -6,10 +6,13 @@ import {
   ElementRef,
   inject,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { displayedVerticalFovDeg } from '../../core/projection/camera-fov';
 import { CameraFovService } from '../../core/projection/camera-fov.service';
+import type { MoonPhaseName } from '../../core/astro/ephemeris';
+import { targetFoundLine, targetFoundToast } from '../../core/personality/target-lines';
 import { FindLineContext, selectFindLine } from '../../core/personality/find-lines';
 import { StatsService } from '../../core/personality/stats.service';
 import { phaseEmoji } from '../../core/render/phase-emoji';
@@ -24,6 +27,7 @@ import { MoonFace } from '../moon-face/moon-face';
 
 /** Feel parameter: smaller = the moon moves faster across the screen and is harder to find. */
 const V_FOV_DEG = 62;
+const FOUND_LINE_MS = 5000;
 const EDGE_GLOW_DELAY_MS = 20_000;
 const EDGE_GLOW_RAMP_MS = 6_000;
 const EDGE_GLOW_MAX_OPACITY = 0.45;
@@ -42,6 +46,9 @@ const EDGE_GLOW_MAX_OPACITY = 0.45;
     <canvas #canvas (pointerdown)="onPointerDown($event)"></canvas>
     <div #glow class="edge-glow"></div>
     <app-moon-face #face />
+    @if (foundLine(); as line) {
+      <p class="found-line" role="status">{{ line }}</p>
+    }
     <app-corner-stat #corner />
   `,
   styles: `
@@ -54,6 +61,20 @@ const EDGE_GLOW_MAX_OPACITY = 0.45;
       width: 100%;
       height: 100%;
       display: block;
+    }
+    .found-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 22%;
+      margin: 0;
+      padding: 0 1.5rem;
+      text-align: center;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      color: #e9e6dc;
+      opacity: 0.85;
+      pointer-events: none;
     }
     .edge-glow {
       position: absolute;
@@ -85,6 +106,9 @@ export class SkyView implements AfterViewInit {
   /** Fires once, the first time any part of the Moon is on screen. */
   readonly moonVisible = output<void>();
 
+  /** Short line for non-Moon targets (the Moon has the face and its speech bubble). */
+  protected readonly foundLine = signal<string | null>(null);
+  private foundLineTimer: ReturnType<typeof setTimeout> | null = null;
   private announcedVisible = false;
   private rafId = 0;
   private dpr = 1;
@@ -107,7 +131,10 @@ export class SkyView implements AfterViewInit {
 
     const sub = this.engine.events$.subscribe((event) => {
       if (event.type === 'found') this.onFound(event.targetId, event.durationMs, event.findIndex);
-      else this.faceRef().clearSpeech();
+      else {
+        this.faceRef().clearSpeech();
+        this.clearFoundLine();
+      }
     });
 
     const onKey = (e: KeyboardEvent) => {
@@ -186,7 +213,7 @@ export class SkyView implements AfterViewInit {
         sessionFindIndex: findIndex,
         lifetimeFindCount: updated.lifetime.finds,
         durationMs,
-        moonPhase: phase.name,
+        moonPhase: phase.name as MoonPhaseName,
         moonAltitudeDeg: target.altitudeDeg,
         sunAltitudeDeg: target.sunAltitudeDeg ?? 0,
         localHour: new Date().getHours(),
@@ -194,15 +221,30 @@ export class SkyView implements AfterViewInit {
       const { text } = selectFindLine(ctx, this.stats.stats().recentLines);
       this.stats.recordLineShown(text);
       this.faceRef().say(text);
-      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name) });
+      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name as MoonPhaseName) });
     } else {
-      this.cornerRef().show({ durationMs, emoji: '✨' });
+      // No face for anything but the Moon. One factual line plus the toast (Phase 7 adds voices).
+      const def = this.selection.selected();
+      const line = targetFoundLine(def.id);
+      if (line) this.showFoundLine(line);
+      this.cornerRef().show({ durationMs, emoji: '', text: targetFoundToast(def, durationMs) });
     }
     try {
       navigator.vibrate?.(30);
     } catch {
       // haptics unsupported — silently skip
     }
+  }
+
+  private showFoundLine(text: string): void {
+    this.foundLine.set(text);
+    if (this.foundLineTimer) clearTimeout(this.foundLineTimer);
+    this.foundLineTimer = setTimeout(() => this.foundLine.set(null), FOUND_LINE_MS);
+  }
+
+  private clearFoundLine(): void {
+    if (this.foundLineTimer) clearTimeout(this.foundLineTimer);
+    this.foundLine.set(null);
   }
 
   private resize(canvas: HTMLCanvasElement): void {
@@ -250,7 +292,10 @@ export class SkyView implements AfterViewInit {
       return;
     }
 
-    if (this.engine.trackerPaused()) this.faceRef().clearSpeech();
+    if (this.engine.trackerPaused()) {
+      this.faceRef().clearSpeech();
+      this.clearFoundLine();
+    }
     this.updateEdgeGlow(frame);
 
     if (!frame.projection.onScreen) {

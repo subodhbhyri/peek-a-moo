@@ -55,16 +55,16 @@ describe('computeTargetState', () => {
   });
 
   it('throws a clear error for kinds without a provider yet', () => {
-    const jupiter: TargetDef = {
-      id: 'jupiter',
-      name: 'Jupiter',
-      kind: 'planet',
-      category: 'solar-system',
+    const iss: TargetDef = {
+      id: 'iss',
+      name: 'ISS',
+      kind: 'satellite',
+      category: 'satellites',
       blurb: '',
-      render: 'planet',
-      body: 'Jupiter',
+      render: 'satellite',
+      satellite: { noradId: 25544 },
     };
-    expect(() => computeTargetState(jupiter, new Date(), POS)).toThrow(/No provider.*jupiter/);
+    expect(() => computeTargetState(iss, new Date(), POS)).toThrow(/No provider.*iss/);
   });
 });
 

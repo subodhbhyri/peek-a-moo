@@ -78,14 +78,25 @@
   </div>
 }
 
+@if (isSun()) {
+  <div class="sun-banner" role="alert">{{ sunBanner }}</div>
+}
+
 <button
   type="button"
   class="corner-control camera-toggle"
+  [class.below-banner]="isSun()"
+  [class.disabled]="isSun()"
   (click)="toggleCamera()"
   [attr.aria-pressed]="cameraOn()"
+  [attr.aria-disabled]="isSun()"
+  [attr.title]="isSun() ? sunCameraNote : null"
 >
   {{ cameraOn() ? '📷' : '🌌' }}
 </button>
+@if (isSun()) {
+  <p class="sun-camera-note">{{ sunCameraNote }}</p>
+}
 @if (cameraError(); as err) {
   <p class="camera-error">{{ err }}</p>
 }

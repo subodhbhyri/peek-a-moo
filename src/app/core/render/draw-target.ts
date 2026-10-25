@@ -1,4 +1,6 @@
 import type { SkyFrame } from '../engine/sky-engine.service';
+import { drawPlanet } from './draw-planet';
+import { drawSun } from './draw-sun';
 import { drawMoonPhase } from './moon-phase';
 
 /** Draws the frame's target at its projected position, dispatching on the catalog's render style. */
@@ -14,6 +16,12 @@ export function drawTarget(ctx: CanvasRenderingContext2D, frame: SkyFrame): void
         frame.target.phase?.illuminatedFraction ?? 1,
         frame.brightLimbRad ?? 0,
       );
+      return;
+    case 'planet':
+      drawPlanet(ctx, frame);
+      return;
+    case 'sun':
+      drawSun(ctx, frame);
       return;
     default:
       throw new Error(`Render style "${frame.def.render}" is not implemented yet.`);

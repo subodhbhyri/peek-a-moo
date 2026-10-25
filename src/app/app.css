@@ -140,3 +140,35 @@ p {
   pointer-events: none;
   padding: 0 1rem;
 }
+
+.sun-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.6rem) 1rem 0.6rem;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a1100;
+  background: #ffcf4d;
+  pointer-events: none;
+}
+.camera-toggle.below-banner {
+  top: calc(env(safe-area-inset-top, 0px) + 3.6rem);
+}
+.camera-toggle.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.sun-camera-note {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 6.2rem);
+  right: max(1rem, env(safe-area-inset-right));
+  font-size: 0.72rem;
+  opacity: 0.6;
+  max-width: 12rem;
+  text-align: right;
+}

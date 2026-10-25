@@ -1,4 +1,3 @@
-import type { MoonPhaseName } from '../astro/ephemeris';
 import type { Vec3 } from '../math/vec3';
 
 export type TargetKind = 'moon' | 'sun' | 'planet' | 'fixed' | 'satellite';
@@ -25,6 +24,19 @@ export interface TargetDef {
   body?:
     'Sun' | 'Moon' | 'Mercury' | 'Venus' | 'Mars' | 'Jupiter' | 'Saturn' | 'Uranus' | 'Neptune';
   satellite?: { noradId: number };
+  /** Sun and planets: how to draw the disc, and the radius its angular size is computed from. */
+  planet?: PlanetStyle;
+}
+
+export interface PlanetStyle {
+  /** Equatorial radius, km. */
+  radiusKm: number;
+  /** Disc fill. */
+  color: string;
+  /** Draw a phase (Mercury, Venus). */
+  phased?: boolean;
+  rings?: boolean;
+  bands?: boolean;
 }
 
 /** Computed position/appearance of a target at a moment. See ARCHITECTURE §5.2. */
@@ -39,8 +51,13 @@ export interface TargetState {
   magnitude: number | null;
   /** True size; the renderer decides display size. */
   angularSizeDeg: number;
-  /** Moon, Mercury, Venus. `name` is a Moon phase name for now; Phase 3 widens it for planets. */
-  phase?: { illuminatedFraction: number; phaseDeg: number; name: MoonPhaseName };
+  /**
+   * Moon, Mercury, Venus. For the Moon `name` is a MoonPhaseName; for planets it is one of
+   * 'new' | 'crescent' | 'quarter' | 'gibbous' | 'full' (no waxing/waning: the lit limb shows that).
+   */
+  phase?: { illuminatedFraction: number; phaseDeg: number; name: string };
+  /** Saturn: ring tilt away from the line of sight, degrees (signed). */
+  rings?: { tiltDeg: number };
   /** For lit-limb orientation (Moon, inner planets). */
   sunDirection?: Vec3;
   /** For orienting extended objects on screen. */

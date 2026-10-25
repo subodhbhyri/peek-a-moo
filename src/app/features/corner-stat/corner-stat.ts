@@ -6,6 +6,8 @@ const COPIED_FLASH_MS = 1500;
 export interface FindStat {
   durationMs: number;
   emoji: string;
+  /** Full toast text for non-Moon targets; when absent the v1 Moon wording is used. */
+  text?: string;
 }
 
 /**
@@ -70,6 +72,7 @@ export class CornerStat {
   }
 
   protected label(p: FindStat): string {
+    if (p.text) return p.text;
     return `Found the moon in ${(p.durationMs / 1000).toFixed(1)}s ${p.emoji}`;
   }
 

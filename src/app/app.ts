@@ -11,6 +11,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { City } from './core/data/cities';
+import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
+import { TargetSelectionService } from './core/targets/target-selection.service';
 import { CameraFovService } from './core/projection/camera-fov.service';
 import { SkyEngineService } from './core/engine/sky-engine.service';
 import { LocationService } from './core/sensors/location.service';
@@ -48,6 +50,7 @@ export class App {
   private readonly engine = inject(SkyEngineService);
   private readonly wakeLock = inject(WakeLockService);
   private readonly cameraFov = inject(CameraFovService);
+  private readonly selection = inject(TargetSelectionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
 
@@ -64,6 +67,10 @@ export class App {
   protected readonly compassCalibration = this.orientation.compassCalibration;
   /** 'flat' | 'stuck' (still not calibrated after 8 s) | 'raise' (calibrated, shown for 1.5 s) | null */
   protected readonly calibrationBanner = signal<'flat' | 'stuck' | 'raise' | null>(null);
+  /** Sun safety: banner on, camera off, alignment off. */
+  protected readonly isSun = computed(() => this.selection.selected().kind === 'sun');
+  protected readonly sunBanner = SUN_SAFETY_BANNER;
+  protected readonly sunCameraNote = SUN_CAMERA_NOTE;
   protected readonly cameraError = signal<string | null>(null);
 
   protected readonly needsFlat = computed(() => {
@@ -93,6 +100,11 @@ export class App {
 
   constructor() {
     if (this.gate() === 'starting') this.start();
+
+    // Selecting the Sun while the camera is on turns the camera off.
+    effect(() => {
+      if (this.isSun() && this.cameraOn()) this.stopCamera();
+    });
 
     // "Hold flat" -> (8 s) "still calibrating" ; on success "Now raise it to the sky." for 1.5 s.
     let stuckTimer: ReturnType<typeof setTimeout> | null = null;
@@ -153,6 +165,7 @@ export class App {
   }
 
   protected async toggleCamera(): Promise<void> {
+    if (this.isSun()) return;
     if (this.cameraOn()) {
       this.stopCamera();
       return;

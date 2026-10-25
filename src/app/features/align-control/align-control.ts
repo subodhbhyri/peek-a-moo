@@ -190,6 +190,8 @@ export class AlignControl {
   /** Sensors are driving the view and the target is actually up there to be aligned with. */
   protected readonly canAlign = computed(() => {
     const target = this.engine.target();
+    // Never for the Sun: aligning would mean looking at it.
+    if (this.selection.selected().kind === 'sun') return false;
     return this.orientation.status() === 'active' && target !== null && target.altitudeDeg > 0;
   });
 

@@ -5,6 +5,7 @@ import { LocationService } from '../../core/sensors/location.service';
 import { SkyEngineService } from '../../core/engine/sky-engine.service';
 import { AlignmentService } from '../../core/calibration/alignment.service';
 import { buildDebugReport } from '../../core/debug/debug-report';
+import { TARGETS } from '../../core/targets/catalog';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { wrap180 } from '../../core/math/vec3';
 import { CameraFovService } from '../../core/projection/camera-fov.service';
@@ -48,7 +49,15 @@ target   {{ target()?.id }} az {{ target()?.azimuthDeg | number: '1.1-1' }}  alt
       }}  {{ target()?.phase?.name }} {{
         (target()?.phase?.illuminatedFraction ?? 0) * 100 | number: '1.0-0'
       }}%
+         mag {{ target()?.magnitude | number: '1.1-1' }}  size {{
+        (target()?.angularSizeDeg ?? 0) * 60 | number: '1.1-1'
+      }}′
 Δ to target az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}</pre>
+    <select aria-label="Target" [value]="selection.selectedId()" (change)="pick($event)">
+      @for (t of targets; track t.id) {
+        <option [value]="t.id" [selected]="t.id === selection.selectedId()">{{ t.name }}</option>
+      }
+    </select>
     <button type="button" (click)="copyReport()">{{ copied() ? 'Copied!' : 'Copy report' }}</button>
     @if (fallbackText(); as text) {
       <textarea readonly rows="8" (focus)="select($event)" [value]="text"></textarea>
@@ -60,6 +69,19 @@ target   {{ target()?.id }} az {{ target()?.azimuthDeg | number: '1.1-1' }}  alt
       left: 0;
       bottom: 0;
       pointer-events: none;
+    }
+    select {
+      pointer-events: auto;
+      position: absolute;
+      right: 90px;
+      top: 4px;
+      font: inherit;
+      font-size: 11px;
+      color: #7cffb2;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #7cffb2;
+      border-radius: 4px;
+      padding: 3px 4px;
     }
     button {
       pointer-events: auto;
@@ -104,7 +126,8 @@ export class DebugOverlay {
   protected readonly d = this.ori.debug;
   protected readonly fov = inject(CameraFovService);
   private readonly alignment = inject(AlignmentService);
-  private readonly selection = inject(TargetSelectionService);
+  protected readonly selection = inject(TargetSelectionService);
+  protected readonly targets = TARGETS;
   protected readonly copied = signal(false);
   protected readonly fallbackText = signal<string | null>(null);
   /** Loaded up front: clipboard writes must happen synchronously inside the tap (Safari). */
@@ -179,6 +202,10 @@ export class DebugOverlay {
     } else {
       this.fallbackText.set(text);
     }
+  }
+
+  protected pick(e: Event): void {
+    this.selection.select((e.target as HTMLSelectElement).value);
   }
 
   protected select(e: Event): void {

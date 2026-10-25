@@ -7,6 +7,7 @@ import {
   brightLimbScreenAngle,
   projectDirection,
 } from '../projection/projection';
+import { northCelestialPole, skyNorthScreenAngle } from '../projection/sky-orientation';
 import { LocationService } from '../sensors/location.service';
 import { OrientationService } from '../sensors/orientation.service';
 import { recomputeIntervalMs } from '../targets/cadence';
@@ -33,6 +34,8 @@ export interface SkyFrame {
    * null when the target has no sun direction (nothing to light).
    */
   brightLimbRad: number | null;
+  /** Screen angle (y up) of celestial north at the target, for orienting rings, bands and extended objects. */
+  skyNorthRad: number;
   phase: FindPhase;
   /** ms since the current search started (drive the "glow on nearest edge" hint off this). */
   searchElapsedMs: number;
@@ -112,6 +115,8 @@ export class SkyEngineService {
     const def = this.selection.selected();
     const radiusPx = displayRadiusFor(target, viewport);
     const projection = projectDirection(target.direction, basis, viewport, radiusPx);
+    const latitude = this.location.position()?.latitude ?? 0;
+    const skyNorthRad = skyNorthScreenAngle(target.direction, northCelestialPole(latitude), basis);
     const brightLimbRad = target.sunDirection
       ? brightLimbScreenAngle(target.direction, target.sunDirection, basis)
       : null;
@@ -123,6 +128,7 @@ export class SkyEngineService {
         projection,
         radiusPx,
         brightLimbRad,
+        skyNorthRad,
         phase: 'searching',
         searchElapsedMs: 0,
         findCount: 0,
@@ -147,6 +153,7 @@ export class SkyEngineService {
       projection,
       radiusPx,
       brightLimbRad,
+      skyNorthRad,
       phase: state.phase,
       searchElapsedMs: now - state.searchStartedAt,
       findCount: state.findCount,
