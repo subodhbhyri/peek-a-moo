@@ -8,6 +8,8 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { displayedVerticalFovDeg } from '../../core/projection/camera-fov';
+import { CameraFovService } from '../../core/projection/camera-fov.service';
 import { FindLineContext, selectFindLine } from '../../core/personality/find-lines';
 import { StatsService } from '../../core/personality/stats.service';
 import { phaseEmoji } from '../../core/render/phase-emoji';
@@ -70,6 +72,7 @@ export class SkyView implements AfterViewInit {
   private readonly engine = inject(SkyEngineService);
   private readonly orientation = inject(OrientationService);
   private readonly stats = inject(StatsService);
+  private readonly cameraFov = inject(CameraFovService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -121,6 +124,7 @@ export class SkyView implements AfterViewInit {
     window.addEventListener('pointerup', onUp);
 
     const loop = (t: number) => {
+      this.syncVerticalFov();
       this.draw(canvas, this.engine.tick(t, this.viewport));
       this.rafId = requestAnimationFrame(loop);
     };
@@ -195,7 +199,32 @@ export class SkyView implements AfterViewInit {
     const { width, height } = canvas.getBoundingClientRect();
     canvas.width = Math.round(width * this.dpr);
     canvas.height = Math.round(height * this.dpr);
-    this.viewport = { width, height, vFovDeg: V_FOV_DEG };
+    this.viewport = { width, height, vFovDeg: this.verticalFovDeg(width, height) };
+    this.cameraFov.vFovInUseDeg.set(this.viewport.vFovDeg);
+  }
+
+  /** Camera on: the FOV the cover-cropped video really shows. Camera off: the V_FOV_DEG feel parameter. */
+  private verticalFovDeg(width: number, height: number): number {
+    const video = this.cameraFov.cameraOn() ? this.cameraFov.videoSize() : null;
+    if (!video || video.width <= 0 || video.height <= 0 || width <= 0 || height <= 0) {
+      return V_FOV_DEG;
+    }
+    return displayedVerticalFovDeg({
+      videoWidth: video.width,
+      videoHeight: video.height,
+      viewportWidth: width,
+      viewportHeight: height,
+      longSideFovDeg: this.cameraFov.longSideFovDeg(),
+    });
+  }
+
+  /** Cheap per-frame check; only touches state when the camera toggles, the slider moves or the video changes. */
+  private syncVerticalFov(): void {
+    const { width, height } = this.viewport;
+    const v = this.verticalFovDeg(width, height);
+    if (v === this.viewport.vFovDeg) return;
+    this.viewport = { width, height, vFovDeg: v };
+    this.cameraFov.vFovInUseDeg.set(v);
   }
 
   private draw(canvas: HTMLCanvasElement, frame: SkyFrame | null): void {
@@ -210,6 +239,7 @@ export class SkyView implements AfterViewInit {
       return;
     }
 
+    if (this.engine.trackerPaused()) this.faceRef().clearSpeech();
     this.updateEdgeGlow(frame);
 
     if (!frame.projection.onScreen) {

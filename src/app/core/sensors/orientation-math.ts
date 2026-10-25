@@ -87,37 +87,50 @@ export function describeBasis(b: CameraBasis): {
 }
 
 /**
- * The heading iOS's `webkitCompassHeading` is assumed to report: the azimuth of whichever of
- * {device top edge (+y), back camera (-z)} is more horizontal. Flat phone -> top edge; upright phone -> camera.
- * Returns null when neither is horizontal enough to trust.
- *
- * ⚠️ VERIFY ON DEVICE: this is the one assumption in the sensor pipeline that can't be proven offline.
- * The debug overlay (?debug) shows the calibrator's offset and spread; a spread that stays near 0 while
- * you tilt between flat and upright means the assumption holds.
+ * Heading of the device top edge (+y axis), but ONLY when the phone is close enough to flat (and screen-up)
+ * for iOS's `webkitCompassHeading` to be unambiguous: there it is the top-edge heading. When the phone is
+ * upright, which axis iOS reports is unverified (and reportedly changed in iOS 26), so we never sample then.
+ * Returns null unless the top edge's horizontal component is >= 0.85 (within ~32° of flat).
  */
-export function referenceHeading(r: Mat3): { headingDeg: number; horizontal: number } | null {
+export function flatReferenceHeading(r: Mat3): number | null {
   const y = column(r, 1);
-  const back = scale(column(r, 2), -1);
-  const hy = Math.hypot(y[0], y[1]);
-  const hb = Math.hypot(back[0], back[1]);
-  const v = hy >= hb ? y : back;
-  const h = Math.max(hy, hb);
-  if (h < 0.5) return null;
-  return { headingDeg: wrap360(Math.atan2(v[0], v[1]) / DEG), horizontal: h };
+  if (Math.hypot(y[0], y[1]) < FLAT_MIN_HORIZONTAL) return null;
+  // Screen must face up (device z has a positive Up component); face-down is not a pose we trust.
+  if (column(r, 2)[2] <= 0) return null;
+  return wrap360(Math.atan2(y[0], y[1]) / DEG);
 }
+
+const FLAT_MIN_HORIZONTAL = 0.85;
+/** Accepted samples needed (in ms of sensor time) before the offset counts as calibrated. */
+export const CALIBRATED_MIN_MS = 1000;
+export const CALIBRATED_MAX_SPREAD = 0.05;
+/** A calibration older than this is flagged, because gyro-referenced alpha drifts. */
+export const STALE_AFTER_MS = 10 * 60_000;
+/** Longest gap between two events that still counts as continuous sensor time. */
+const MAX_SAMPLE_DT_MS = 250;
+
+export type CompassCalibration = 'uncalibrated' | 'calibrating' | 'calibrated' | 'stale';
 
 /**
  * Circular exponential moving average of the iOS "raw alpha -> magnetic north" offset.
  * iOS reports `alpha` relative to an arbitrary start heading, while `webkitCompassHeading` is absolute
- * (magnetic) but noisy. We fuse them: alpha gives smooth, fast rotation; the compass slowly pins it to north.
+ * (magnetic) but noisy. We fuse them: alpha gives smooth, fast rotation; the compass pins it to north.
  * offset() is the value to ADD to raw alpha so it becomes magnetic-north referenced.
+ *
+ * The compass is only sampled in the one pose where it is unambiguous: phone near-flat, portrait UI.
+ * Everything else is ignored and the held offset keeps working because alpha is gyro-stable.
  */
 export class HeadingOffsetCalibrator {
   private sumSin = 0;
   private sumCos = 0;
   private samples = 0;
+  private acceptedMs = 0;
+  private lastAcceptedAt: number | null = null;
 
-  constructor(private readonly tauMs = 1500) {}
+  constructor(
+    private readonly tauMs = 1500,
+    private readonly now: () => number = () => performance.now(),
+  ) {}
 
   update(
     rawAlpha: number,
@@ -125,16 +138,28 @@ export class HeadingOffsetCalibrator {
     gamma: number,
     compassHeadingDeg: number,
     dtMs: number,
+    screenAngleDeg: number,
   ): number | null {
     if (!Number.isFinite(compassHeadingDeg) || compassHeadingDeg < 0) return this.offset();
-    const ref = referenceHeading(rotationFromEuler(rawAlpha, beta, gamma));
-    if (!ref) return this.offset();
+    if (screenAngleDeg !== 0) return this.offset();
+    const ref = flatReferenceHeading(rotationFromEuler(rawAlpha, beta, gamma));
+    if (ref === null) return this.offset();
+
+    const t = this.now();
+    if (this.lastAcceptedAt !== null && t - this.lastAcceptedAt > STALE_AFTER_MS) {
+      // The held offset is too old to trust (gyro drift): start over from this fresh measurement.
+      this.sumSin = this.sumCos = this.samples = this.acceptedMs = 0;
+    }
     // alpha += delta rotates the world view about Up and DEcreases every azimuth by delta.
-    const delta = wrap180(ref.headingDeg - compassHeadingDeg) * DEG;
-    const k = this.samples === 0 ? 1 : 1 - Math.exp(-Math.max(dtMs, 1) / this.tauMs);
+    const delta = wrap180(ref - compassHeadingDeg) * DEG;
+    const dt = Math.min(Math.max(dtMs, 1), MAX_SAMPLE_DT_MS);
+    // Plain running mean while the history is short, EMA once it is longer than tau.
+    const k = Math.max(1 - Math.exp(-dt / this.tauMs), 1 / (this.samples + 1));
     this.sumSin = this.sumSin * (1 - k) + Math.sin(delta) * k;
     this.sumCos = this.sumCos * (1 - k) + Math.cos(delta) * k;
     this.samples++;
+    this.acceptedMs += dt;
+    this.lastAcceptedAt = t;
     return this.offset();
   }
 
@@ -147,7 +172,21 @@ export class HeadingOffsetCalibrator {
     return this.samples === 0 ? 0 : 1 - Math.hypot(this.sumSin, this.sumCos);
   }
 
+  state(): CompassCalibration {
+    if (this.samples === 0 || this.lastAcceptedAt === null) return 'uncalibrated';
+    if (this.acceptedMs < CALIBRATED_MIN_MS || this.spread() > CALIBRATED_MAX_SPREAD) {
+      return 'calibrating';
+    }
+    return this.now() - this.lastAcceptedAt > STALE_AFTER_MS ? 'stale' : 'calibrated';
+  }
+
+  /** ms since the last accepted compass sample; null if there has been none. */
+  lastSampleAgeMs(): number | null {
+    return this.lastAcceptedAt === null ? null : this.now() - this.lastAcceptedAt;
+  }
+
   reset(): void {
-    this.sumSin = this.sumCos = this.samples = 0;
+    this.sumSin = this.sumCos = this.samples = this.acceptedMs = 0;
+    this.lastAcceptedAt = null;
   }
 }

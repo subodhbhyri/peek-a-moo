@@ -40,7 +40,7 @@ export class LocationService {
     });
   }
 
-  /** Fallback when permission is denied: user picks a city (UI: see PLAN.md, phase 5). */
+  /** Fallback when permission is denied: user picks a city (UI: see docs/archive/PLAN-v1.md, phase 5). */
   setManual(pos: GeoPosition): void {
     this.position.set(pos);
     this.status.set('manual');

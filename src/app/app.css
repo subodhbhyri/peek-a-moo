@@ -109,3 +109,34 @@ p {
   max-width: 12rem;
   text-align: right;
 }
+
+.calibration {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  padding: 2rem;
+  pointer-events: none;
+  background: rgba(3, 3, 3, 0.7);
+}
+.calibration p {
+  font-size: 1.05rem;
+  max-width: 20rem;
+}
+.calibration svg {
+  opacity: 0.7;
+}
+.stale-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 0.78rem;
+  opacity: 0.6;
+  pointer-events: none;
+  padding: 0 1rem;
+}

@@ -51,6 +51,9 @@ export class SkyEngineService {
   /** found / lost events. The personality + stats layer subscribes to this. */
   readonly events$ = new Subject<FindEvent>();
 
+  /** True while the user is lining up the real Moon (align mode): no find tracking, events or stats. */
+  readonly trackerPaused = signal(false);
+
   private tracker: FindTrackerState | null = null;
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -68,6 +71,15 @@ export class SkyEngineService {
     });
   }
 
+  /**
+   * Pause/resume find tracking. Either way the tracker is dropped, so resuming starts a fresh search
+   * (new search timer, no 'lost' event for a find that was in progress).
+   */
+  setTrackerPaused(paused: boolean): void {
+    this.tracker = null;
+    this.trackerPaused.set(paused);
+  }
+
   /** Force a fresh ephemeris (e.g. after the tab was backgrounded for a while). */
   recomputeMoon(date = new Date()): void {
     const pos = this.location.position();
@@ -79,10 +91,22 @@ export class SkyEngineService {
     const basis = this.orientation.basis();
     if (!moon || !basis) return null;
 
-    this.tracker ??= initialTrackerState(now);
-
     const radiusPx = displayRadiusPx(viewport, moon.angularDiameterDeg);
     const projection = projectDirection(moon.direction, basis, viewport, radiusPx);
+
+    if (this.trackerPaused()) {
+      return {
+        moon,
+        projection,
+        radiusPx,
+        brightLimbRad: brightLimbScreenAngle(moon.direction, moon.sunDirection, basis),
+        phase: 'searching',
+        searchElapsedMs: 0,
+        findCount: 0,
+        lastFindDurationMs: null,
+      };
+    }
+    this.tracker ??= initialTrackerState(now);
     const centered = projection.onScreen && projection.centerDistance <= CENTERED_THRESHOLD;
 
     const { state, event } = stepTracker(this.tracker, {

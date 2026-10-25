@@ -4,7 +4,7 @@ Point your phone at the sky. When it's aimed at the real Moon, the Moon shows up
 
 Built with Angular 21, `astronomy-engine` (topocentric ephemeris), and `geomagnetism` (WMM2025 magnetic declination). No backend — your location never leaves your device.
 
-Full build plan and phase-by-phase status: [PLAN.md](./PLAN.md)
+Full build plan and phase-by-phase status: [docs/archive/PLAN-v1.md](./docs/archive/PLAN-v1.md)
 
 ## 1. Setup
 
@@ -56,7 +56,7 @@ For the real thing, you need an HTTPS URL your phone can reach. The easiest path
 
 ## 4. Before deploying for real
 
-- Pick a name/domain (a few ideas are in PLAN.md) and connect it in Vercel's project settings.
+- Pick a name/domain (a few ideas are in docs/archive/PLAN-v1.md) and connect it in Vercel's project settings.
 - If you want analytics, add Vercel Analytics or Plausible now — this was deliberately left out since it needs your account, and the plan only asks for anonymous events (found, find-time bucket, platform), never location.
 - Consider recording a short screen capture for the README/portfolio once you've confirmed it works outside.
 

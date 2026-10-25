@@ -1,8 +1,18 @@
-<video #cameraVideo class="camera-feed" [class.on]="cameraOn()" playsinline muted></video>
+<video
+  #cameraVideo
+  class="camera-feed"
+  [class.on]="cameraOn()"
+  playsinline
+  muted
+  (loadedmetadata)="onVideoMetadata()"
+  (resize)="onVideoMetadata()"
+></video>
 
 <app-sky-view (moonVisible)="moonSeen.set(true)" />
+<app-align-control />
+<app-camera-settings />
 
-@if (showIntro()) {
+@if (showIntro() && !calibrationBanner()) {
   <main class="intro">
     <h1>Find the moon.</h1>
     <p>Move your phone until it appears.</p>
@@ -25,6 +35,37 @@
     }
     <p class="privacy">Your location stays on your phone.</p>
   </main>
+}
+
+@if (calibrationBanner(); as banner) {
+  <div class="calibration" role="status">
+    @if (banner === 'raise') {
+      <p>Now raise it to the sky.</p>
+    } @else {
+      <svg viewBox="0 0 64 40" width="72" height="45" aria-hidden="true">
+        <path
+          d="M14 30 L26 12 H58 L46 30 Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+        <path d="M16 34 H48" stroke="currentColor" stroke-width="1" opacity="0.4" />
+        <circle cx="52" cy="17" r="1.2" fill="currentColor" />
+      </svg>
+      <p>
+        @if (banner === 'stuck') {
+          Still calibrating — step away from metal or magnets and hold flat again.
+        } @else {
+          Hold your phone flat for a second.
+        }
+      </p>
+    }
+  </div>
+}
+
+@if (showStaleHint()) {
+  <p class="stale-hint">Lower your phone flat for a second to re-sync the compass.</p>
 }
 
 @if (needsLocationFallback() && gate() === 'running') {

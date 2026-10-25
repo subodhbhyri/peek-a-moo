@@ -1,7 +1,10 @@
-import { Injectable, OnDestroy, signal } from '@angular/core';
+import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { AlignmentService } from '../calibration/alignment.service';
+import { applyYawCorrection } from '../calibration/alignment';
 import { Quat, mat3FromQuat, quatFromMat3, slerp } from '../math/vec3';
 import {
   CameraBasis,
+  CompassCalibration,
   HeadingOffsetCalibrator,
   cameraBasisFromAzAlt,
   cameraBasisFromRotation,
@@ -30,6 +33,8 @@ export interface OrientationDebug {
   compassAccuracy: number | null;
   iosOffset: number | null;
   iosOffsetSpread: number;
+  compassCalibration: CompassCalibration;
+  lastCompassSampleAgeMs: number | null;
   declination: number;
   screenAngle: number;
   pointingAz: number;
@@ -56,9 +61,16 @@ export class OrientationService implements OnDestroy {
   readonly basis = signal<CameraBasis | null>(null);
   /** iOS only: compass accuracy in degrees (lower is better). >25 is worth a "wave in a figure-8" hint. */
   readonly compassAccuracyDeg = signal<number | null>(null);
+  /**
+   * iOS only really calibrates (flat + portrait samples of webkitCompassHeading); Android's absolute
+   * event is north-referenced already, so it is always 'calibrated'.
+   */
+  readonly compassCalibration = signal<CompassCalibration>('uncalibrated');
   readonly debug = signal<OrientationDebug | null>(null);
 
+  private readonly alignment = inject(AlignmentService);
   private declinationDeg = 0;
+  private uncorrected: CameraBasis | null = null;
   private smoothed: Quat | null = null;
   private lastEventTime = 0;
   private lastDebugTime = 0;
@@ -94,13 +106,26 @@ export class OrientationService implements OnDestroy {
     this.listening = null;
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.smoothed = null;
+    this.uncorrected = null;
     this.calibrator.reset();
+    this.compassCalibration.set('uncalibrated');
+  }
+
+  /** Milliseconds since the last accepted iOS compass sample (null on Android / before the first). */
+  lastCompassSampleAgeMs(): number | null {
+    return this.calibrator.lastSampleAgeMs();
+  }
+
+  /** The published basis WITHOUT the sight-alignment correction. Alignment is computed from this. */
+  uncorrectedBasis(): CameraBasis | null {
+    return this.uncorrected;
   }
 
   /** Desktop / no-sensor fallback: point the virtual camera by azimuth & altitude (true north). */
   setManualPose(azimuthDeg: number, altitudeDeg: number): void {
     this.stop();
     this.status.set('manual');
+    this.uncorrected = null;
     this.basis.set(cameraBasisFromAzAlt(azimuthDeg, altitudeDeg));
   }
 
@@ -119,28 +144,42 @@ export class OrientationService implements OnDestroy {
     const iosAccuracy =
       typeof e.webkitCompassAccuracy === 'number' ? e.webkitCompassAccuracy : null;
 
+    const screenAngle = currentScreenAngle();
+
     // 1. Get alpha referenced to MAGNETIC north.
     let alphaMagnetic: number | null = null;
     let source: HeadingSource | 'relative';
     if (iosHeading !== null) {
       source = 'ios-compass';
-      const offset = this.calibrator.update(alpha, beta, gamma, iosHeading, dt);
+      const offset = this.calibrator.update(alpha, beta, gamma, iosHeading, dt, screenAngle);
       if (offset !== null) alphaMagnetic = alpha + offset;
+      this.compassCalibration.set(this.calibrator.state());
       this.compassAccuracyDeg.set(iosAccuracy !== null && iosAccuracy >= 0 ? iosAccuracy : null);
     } else if (this.listening === 'deviceorientationabsolute' || e.absolute) {
       source = 'absolute';
       alphaMagnetic = alpha;
+      this.compassCalibration.set('calibrated');
     } else {
       source = 'relative';
+      this.compassCalibration.set('uncalibrated');
     }
 
     if (source === 'relative') {
       this.status.set('no-compass');
-      this.publishDebug(now, e, source, iosHeading, iosAccuracy, 0);
+      this.publishDebug(now, e, source, iosHeading, iosAccuracy, screenAngle);
       return;
     }
     this.headingSource.set(source);
-    if (alphaMagnetic === null) return; // iOS: waiting for first valid compass heading
+
+    // iOS: until the compass has been sampled while flat, any pointing would be wrong, so publish nothing.
+    const cal = this.compassCalibration();
+    if (alphaMagnetic === null || (cal !== 'calibrated' && cal !== 'stale')) {
+      this.smoothed = null;
+      this.uncorrected = null;
+      if (this.basis() !== null) this.basis.set(null);
+      this.publishDebug(now, e, source, iosHeading, iosAccuracy, screenAngle);
+      return;
+    }
 
     // 2. Magnetic -> true north. trueAz = magAz + D, and azimuth = -alpha, so alphaTrue = alphaMag - D.
     const alphaTrue = alphaMagnetic - this.declinationDeg;
@@ -150,9 +189,10 @@ export class OrientationService implements OnDestroy {
     const k = 1 - Math.exp(-dt / SMOOTHING_TAU_MS);
     this.smoothed = this.smoothed ? slerp(this.smoothed, target, k) : target;
 
-    // 4. Camera basis with the current screen rotation applied.
-    const screenAngle = currentScreenAngle();
-    this.basis.set(cameraBasisFromRotation(mat3FromQuat(this.smoothed), screenAngle));
+    // 4. Camera basis with the current screen rotation applied, then the user's sight-alignment yaw.
+    this.uncorrected = cameraBasisFromRotation(mat3FromQuat(this.smoothed), screenAngle);
+    const yaw = this.alignment.yawFor(source);
+    this.basis.set(yaw === null ? this.uncorrected : applyYawCorrection(this.uncorrected, yaw));
     if (this.status() !== 'active') this.status.set('active');
 
     this.publishDebug(now, e, source, iosHeading, iosAccuracy, screenAngle);
@@ -179,6 +219,8 @@ export class OrientationService implements OnDestroy {
       compassAccuracy,
       iosOffset: this.calibrator.offset(),
       iosOffsetSpread: this.calibrator.spread(),
+      compassCalibration: this.compassCalibration(),
+      lastCompassSampleAgeMs: this.calibrator.lastSampleAgeMs(),
       declination: this.declinationDeg,
       screenAngle,
       pointingAz: d.azimuthDeg,

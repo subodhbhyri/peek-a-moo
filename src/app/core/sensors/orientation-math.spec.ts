@@ -1,10 +1,11 @@
-import { Mat3, Vec3, azAltFromDirection, column, dot, wrap180 } from '../math/vec3';
+import { Mat3, Vec3, column, dot, wrap180, wrap360 } from '../math/vec3';
 import {
   HeadingOffsetCalibrator,
+  STALE_AFTER_MS,
   cameraBasisFromAzAlt,
   cameraBasisFromRotation,
   describeBasis,
-  referenceHeading,
+  flatReferenceHeading,
   rotationFromEuler,
 } from './orientation-math';
 
@@ -75,50 +76,166 @@ describe('camera pointing', () => {
   });
 });
 
-describe('referenceHeading', () => {
-  it('uses the top edge when flat and the back camera when upright', () => {
-    expect(referenceHeading(rotationFromEuler(0, 0, 0))!.headingDeg).toBeCloseTo(0, 6);
-    expect(referenceHeading(rotationFromEuler(0, 90, 0))!.headingDeg).toBeCloseTo(0, 6);
-    expect(referenceHeading(rotationFromEuler(90, 0, 0))!.headingDeg).toBeCloseTo(270, 6);
+describe('flatReferenceHeading', () => {
+  it('returns the top-edge heading when the phone is flat', () => {
+    expect(flatReferenceHeading(rotationFromEuler(0, 0, 0))).toBeCloseTo(0, 6);
+    expect(flatReferenceHeading(rotationFromEuler(90, 0, 0))).toBeCloseTo(270, 6);
+    expect(flatReferenceHeading(rotationFromEuler(200, 20, 5))).not.toBeNull();
+  });
+
+  it('returns null when upright, steeply tilted, or face down', () => {
+    expect(flatReferenceHeading(rotationFromEuler(0, 90, 0))).toBeNull();
+    expect(flatReferenceHeading(rotationFromEuler(0, 45, 0))).toBeNull();
+    expect(flatReferenceHeading(rotationFromEuler(0, 180, 0))).toBeNull();
+  });
+
+  it('cuts off at a horizontal component of 0.85 (~32° from flat)', () => {
+    expect(flatReferenceHeading(rotationFromEuler(0, 31, 0))).not.toBeNull();
+    expect(flatReferenceHeading(rotationFromEuler(0, 33, 0))).toBeNull();
   });
 });
 
+/** Feeds `ms` of flat, portrait samples at 60 Hz into a calibrator, with a fake clock. */
+function feedFlat(
+  cal: HeadingOffsetCalibrator,
+  clock: { t: number },
+  ms: number,
+  opts: { magAlpha: number; offset: number; noiseDeg?: number; screenAngle?: number },
+  rnd: () => number = () => 0.5,
+): void {
+  const dt = 1000 / 60;
+  for (let elapsed = 0; elapsed < ms; elapsed += dt) {
+    clock.t += dt;
+    const noise = (opts.noiseDeg ?? 0) * (rnd() * 2 - 1);
+    const compass = wrap360(360 - opts.magAlpha + noise);
+    cal.update(opts.magAlpha - opts.offset, 0, 0, compass, dt, opts.screenAngle ?? 0);
+  }
+}
+
+function lcg(seed: number): () => number {
+  let a = seed;
+  return () => {
+    a = (a * 1664525 + 1013904223) % 4294967296;
+    return a / 4294967296;
+  };
+}
+
 describe('HeadingOffsetCalibrator (iOS relative alpha + compass)', () => {
-  it('recovers the unknown alpha offset from compass headings across flat and upright poses', () => {
-    const trueOffset = 37; // iOS alpha started 37° away from north
-    const cal = new HeadingOffsetCalibrator(200);
-    const poses: [number, number, number][] = [
-      [10, 5, 0],
-      [200, 90, 0],
-      [300, 60, 10],
-      [45, 110, -5],
-    ];
-    for (let i = 0; i < 50; i++) {
-      for (const [absAlpha, beta, gamma] of poses) {
-        const compass = referenceHeading(rotationFromEuler(absAlpha, beta, gamma))!.headingDeg;
-        cal.update(absAlpha - trueOffset, beta, gamma, compass, 16);
-      }
-    }
-    expect(wrap180(cal.offset()! - trueOffset)).toBeCloseTo(0, 6);
-    expect(cal.spread()).toBeLessThan(1e-6);
+  const make = () => {
+    const clock = { t: 0 };
+    return { clock, cal: new HeadingOffsetCalibrator(1500, () => clock.t) };
+  };
+
+  it('starts uncalibrated', () => {
+    const { cal } = make();
+    expect(cal.state()).toBe('uncalibrated');
+    expect(cal.offset()).toBeNull();
+    expect(cal.lastSampleAgeMs()).toBeNull();
+  });
+
+  it('recovers the unknown alpha offset from flat samples and goes calibrated after 1 s', () => {
+    const { cal, clock } = make();
+    feedFlat(cal, clock, 400, { magAlpha: 123, offset: 37 });
+    expect(cal.state()).toBe('calibrating');
+    feedFlat(cal, clock, 800, { magAlpha: 123, offset: 37 });
+    expect(cal.state()).toBe('calibrated');
+    expect(wrap180(cal.offset()! - 37)).toBeCloseTo(0, 6);
+    expect(cal.spread()).toBeLessThan(1e-9);
+  });
+
+  it('ignores upright samples: the held offset does not change', () => {
+    const { cal, clock } = make();
+    feedFlat(cal, clock, 1200, { magAlpha: 50, offset: 37 });
+    const before = cal.offset();
+    const age = cal.lastSampleAgeMs();
+    clock.t += 5000;
+    // Upright, facing 120°, with a deliberately wrong compass value: must be ignored.
+    cal.update(300, 90, 0, 10, 16, 0);
+    cal.update(300, 100, 0, 200, 16, 0);
+    expect(cal.offset()).toBe(before);
+    expect(cal.lastSampleAgeMs()!).toBeCloseTo(age! + 5000, 6);
+  });
+
+  it('ignores landscape samples (screen angle 90 / 270)', () => {
+    const { cal, clock } = make();
+    feedFlat(cal, clock, 1200, { magAlpha: 50, offset: 37, screenAngle: 90 });
+    expect(cal.state()).toBe('uncalibrated');
+    feedFlat(cal, clock, 1200, { magAlpha: 50, offset: 37, screenAngle: 270 });
+    expect(cal.state()).toBe('uncalibrated');
+    expect(cal.offset()).toBeNull();
   });
 
   it('ignores invalid compass readings', () => {
-    const cal = new HeadingOffsetCalibrator();
-    expect(cal.update(0, 90, 0, -1, 16)).toBeNull();
-    expect(cal.update(0, 90, 0, NaN, 16)).toBeNull();
+    const { cal } = make();
+    expect(cal.update(0, 0, 0, -1, 16, 0)).toBeNull();
+    expect(cal.update(0, 0, 0, NaN, 16, 0)).toBeNull();
+    expect(cal.state()).toBe('uncalibrated');
   });
 
-  it('end to end: corrected alpha points the camera at the right true azimuth', () => {
-    // Phone upright facing azimuth 120°, raw iOS alpha arbitrary.
-    const absAlpha = 360 - 120;
-    const raw = absAlpha - 81;
-    const cal = new HeadingOffsetCalibrator();
-    const compass = referenceHeading(rotationFromEuler(absAlpha, 90, 0))!.headingDeg;
-    const off = cal.update(raw, 90, 0, compass, 16)!;
-    const { azimuthDeg } = azAltFromDirection(
-      cameraBasisFromRotation(rotationFromEuler(raw + off, 90, 0), 0).forward,
-    );
-    expect(azimuthDeg).toBeCloseTo(120, 6);
+  it('session with ±3° noise: calibrated, offset within 1°, then upright pointing stays within 1° of truth', () => {
+    const { cal, clock } = make();
+    const X = 81; // raw alpha = magnetic alpha - X
+    feedFlat(cal, clock, 1200, { magAlpha: 200, offset: X, noiseDeg: 3 }, lcg(7));
+    expect(cal.state()).toBe('calibrated');
+    expect(Math.abs(wrap180(cal.offset()! - X))).toBeLessThan(1);
+
+    // Raise the phone and turn to face azimuth 120° (magnetic alpha = 240). Compass is not consulted.
+    const truthAz = 120;
+    const magAlpha = 360 - truthAz;
+    const raw = magAlpha - X;
+    cal.update(raw, 90, 0, 999, 16, 0);
+    for (const [beta, gamma] of [
+      [90, 0],
+      [110, 3],
+      [70, -4],
+    ] as const) {
+      const off = cal.update(raw, beta, gamma, 17, 16, 0)!;
+      const p = describeBasis(cameraBasisFromRotation(rotationFromEuler(raw + off, 90, 0), 0));
+      expect(Math.abs(wrap180(p.azimuthDeg - truthAz))).toBeLessThan(1);
+    }
+    expect(cal.state()).toBe('calibrated');
+  });
+
+  it('handles true offsets near ±180° with ±3° noise, including the short-history period', () => {
+    for (const X of [179, -179, 180, -180, 177, -177]) {
+      const { cal, clock } = make();
+      const rnd = lcg(Math.abs(X) + 11);
+      const opts = { magAlpha: 123, offset: X, noiseDeg: 3 };
+      // Short history (running-mean phase): never worse than the single-sample noise bound.
+      for (let step = 0; step < 6; step++) {
+        feedFlat(cal, clock, 50, opts, rnd);
+        expect(Math.abs(wrap180(cal.offset()! - X)), `X=${X} step=${step}`).toBeLessThan(3.01);
+      }
+      feedFlat(cal, clock, 900, opts, rnd);
+      expect(cal.state(), `X=${X}`).toBe('calibrated');
+      expect(Math.abs(wrap180(cal.offset()! - X)), `X=${X}`).toBeLessThan(1);
+      expect(cal.spread()).toBeLessThan(0.05);
+    }
+  });
+
+  it('goes stale after 10 min without an accepted sample, and recalibrates from a fresh one', () => {
+    const { cal, clock } = make();
+    feedFlat(cal, clock, 1200, { magAlpha: 50, offset: 10 });
+    expect(cal.state()).toBe('calibrated');
+    clock.t += STALE_AFTER_MS - 1000;
+    expect(cal.state()).toBe('calibrated');
+    clock.t += 2000;
+    expect(cal.state()).toBe('stale');
+    // Fresh flat sample: the old offset is dropped, state restarts at calibrating, then calibrated.
+    feedFlat(cal, clock, 100, { magAlpha: 50, offset: 25 });
+    expect(cal.state()).toBe('calibrating');
+    feedFlat(cal, clock, 1000, { magAlpha: 50, offset: 25 });
+    expect(cal.state()).toBe('calibrated');
+    expect(wrap180(cal.offset()! - 25)).toBeCloseTo(0, 6);
+  });
+
+  it('inconsistent compass samples keep it from calibrating (spread > 0.05)', () => {
+    const { cal, clock } = make();
+    const dt = 1000 / 60;
+    for (let i = 0; i < 120; i++) {
+      clock.t += dt;
+      cal.update(0, 0, 0, i % 2 === 0 ? 0 : 120, dt, 0);
+    }
+    expect(cal.state()).toBe('calibrating');
   });
 });
