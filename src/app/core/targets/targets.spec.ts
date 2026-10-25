@@ -40,6 +40,7 @@ describe('computeTargetState', () => {
     expect(t.sunAltitudeDeg).toBe(m.sunAltitudeDeg);
     expect(t.angularSizeDeg).toBe(m.angularDiameterDeg);
     expect(t.phase).toEqual({
+      kind: 'moon',
       illuminatedFraction: m.illuminatedFraction,
       phaseDeg: m.phaseDeg,
       name: m.phaseName,

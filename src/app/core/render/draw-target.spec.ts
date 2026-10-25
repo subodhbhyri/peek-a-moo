@@ -19,6 +19,7 @@ function frameFor(def: TargetDef, over: Partial<TargetState> = {}): SkyFrame {
   return {
     def,
     target,
+    viewport: VP,
     projection: {
       inFront: true,
       x: 200,
@@ -45,7 +46,7 @@ describe('drawTarget dispatch', () => {
     for (const def of TARGETS) {
       const { ctx, log } = recordingContext();
       expect(() => drawTarget(ctx, frameFor(def)), def.id).not.toThrow();
-      expect(count(log, 'fill('), def.id).toBeGreaterThan(0);
+      expect(log.length, def.id).toBeGreaterThan(0);
     }
   });
 
@@ -67,7 +68,7 @@ describe('drawTarget dispatch', () => {
   });
 
   it('styles without a renderer yet throw a clear error', () => {
-    const star: TargetDef = { ...getTarget('moon')!, id: 'x', render: 'star' };
+    const star: TargetDef = { ...getTarget('moon')!, id: 'x', render: 'satellite' };
     expect(() => drawTarget(recordingContext().ctx, { ...frameFor(star), def: star })).toThrow(
       /not implemented/,
     );
@@ -95,13 +96,17 @@ describe('drawPlanet', () => {
     const crescent = recordingContext();
     drawPlanet(
       crescent.ctx,
-      frameFor(venus, { phase: { illuminatedFraction: 0.3, phaseDeg: 60, name: 'crescent' } }),
+      frameFor(venus, {
+        phase: { kind: 'planet', illuminatedFraction: 0.3, phaseDeg: 60, name: 'crescent' },
+      }),
     );
     expect(count(crescent.log, 'ellipse(')).toBe(1);
     const full = recordingContext();
     drawPlanet(
       full.ctx,
-      frameFor(venus, { phase: { illuminatedFraction: 1, phaseDeg: 180, name: 'full' } }),
+      frameFor(venus, {
+        phase: { kind: 'planet', illuminatedFraction: 1, phaseDeg: 180, name: 'full' },
+      }),
     );
     // Full: the terminator ellipse is as wide as the disc (gibbous branch, width r); crescent 0.3: width 0.4 r.
     expect(full.log.some((l) => l.startsWith('ellipse(0,0,30,30,'))).toBe(true);

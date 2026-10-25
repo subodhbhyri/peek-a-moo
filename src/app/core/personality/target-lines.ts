@@ -13,9 +13,27 @@ export const TARGET_FOUND_LINES: Readonly<Record<string, string>> = {
   saturn: 'Saturn. Those rings are mostly ice.',
   uranus: 'Uranus. It spins tipped on its side.',
   neptune: 'Neptune. Too faint for bare eyes, but it is right there.',
+  polaris: 'Polaris. The sky turns around me.',
+  sirius: 'Sirius. The brightest star in the night sky, and only 8.6 light-years away.',
+  betelgeuse: 'Betelgeuse. A red supergiant so big it would swallow the orbit of Mars.',
+  vega: 'Vega. The pole star, in about 12,000 years.',
+  arcturus: 'Arcturus. An orange giant, and the brightest star in the northern sky.',
+  m31: 'Andromeda. The light hitting your eye left it 2.5 million years ago.',
+  m42: 'The Orion Nebula. New stars are being born in there right now.',
+  m45: 'The Pleiades. A young cluster of more than a thousand stars.',
+  'galactic-center': "You can't see it — but 4 million suns' worth of black hole is right there.",
+  lmc: 'The Large Magellanic Cloud. A whole galaxy, circling ours.',
 };
 
 export const SUN_SAFETY_BANNER = 'Never look at the Sun — not directly, not through your camera.';
+/** Shown under the toast when a found target cannot be seen by eye (magnitude unknown or fainter than 6). */
+export const NOT_VISIBLE_NOTE = "Not visible to the eye — it's there, behind dust.";
+
+/** True when a target is not a naked-eye object: magnitude null or fainter than 6. */
+export function isNotNakedEye(magnitude: number | null): boolean {
+  return magnitude === null || magnitude > 6;
+}
+
 export const SUN_CAMERA_NOTE = 'Camera is off for the Sun.';
 
 /** The line to show when a non-Moon target is found, or null if there is none. */

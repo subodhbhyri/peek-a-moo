@@ -1,8 +1,10 @@
 import { TARGETS, getTarget } from '../targets/catalog';
 import {
+  NOT_VISIBLE_NOTE,
   SUN_CAMERA_NOTE,
   SUN_SAFETY_BANNER,
   TARGET_FOUND_LINES,
+  isNotNakedEye,
   targetFoundLine,
   targetFoundToast,
 } from './target-lines';
@@ -34,5 +36,25 @@ describe('target found lines', () => {
       'Never look at the Sun — not directly, not through your camera.',
     );
     expect(SUN_CAMERA_NOTE).toBe('Camera is off for the Sun.');
+  });
+
+  it('the Galactic Center and Polaris lines are the specified ones', () => {
+    expect(targetFoundLine('polaris')).toBe('Polaris. The sky turns around me.');
+    expect(targetFoundLine('galactic-center')).toBe(
+      "You can't see it — but 4 million suns' worth of black hole is right there.",
+    );
+  });
+
+  it('flags targets that are not naked-eye: magnitude null or fainter than 6', () => {
+    expect(isNotNakedEye(null)).toBe(true);
+    expect(isNotNakedEye(7.8)).toBe(true);
+    expect(isNotNakedEye(6.01)).toBe(true);
+    expect(isNotNakedEye(6)).toBe(false);
+    expect(isNotNakedEye(-1.46)).toBe(false);
+    const flagged = TARGETS.filter((t) => t.fixed && isNotNakedEye(t.fixed.magnitude)).map(
+      (t) => t.id,
+    );
+    expect(flagged).toEqual(['galactic-center']);
+    expect(NOT_VISIBLE_NOTE).toBe("Not visible to the eye — it's there, behind dust.");
   });
 });

@@ -1,5 +1,6 @@
 import { DEG } from '../math/vec3';
 import { Viewport, displayRadiusPx, focalLengthPx } from '../projection/projection';
+import { starGlowRadiusPx } from '../render/draw-star';
 import { getTarget } from './catalog';
 import type { TargetState } from './target.types';
 
@@ -11,12 +12,15 @@ export const MIN_PLANET_FRACTION = 0.035;
 /**
  * On-screen radius in CSS px.
  *  - Moon and Sun: the v1 exaggerated-Moon formula with the body's own angular diameter.
- *  - Planets: true size when it is larger than the minimum sprite, else the minimum.
- *    (Saturn's rings are drawn out to 2.25 globe radii around this radius.)
+ *  - Planets and extended objects (semi-major axis): true size when larger than the minimum sprite,
+ *    else the minimum. (Saturn's rings are drawn out to 2.25 globe radii around this radius.)
+ *  - Stars: their visible glow radius, from magnitude.
  */
 export function displayRadiusFor(state: TargetState, viewport: Viewport): number {
-  const kind = getTarget(state.id)?.kind;
-  if (kind === 'planet') {
+  const def = getTarget(state.id);
+  if (def?.render === 'star') return starGlowRadiusPx(state.magnitude ?? 6);
+  // Planets and extended objects: true size, but never smaller than the minimum sprite.
+  if (def?.kind === 'planet' || def?.render === 'extended') {
     const minPx = MIN_PLANET_FRACTION * Math.min(viewport.width, viewport.height);
     const truePx = focalLengthPx(viewport) * Math.tan((state.angularSizeDeg * DEG) / 2);
     return Math.max(minPx, truePx);
@@ -26,10 +30,10 @@ export function displayRadiusFor(state: TargetState, viewport: Viewport): number
 
 /**
  * How close to the center (fraction of half the shorter screen side) counts as "found".
- * TODO(Phase 3/4): scale with the displayed size, so a 3° galaxy does not need pinpoint centering.
+ * 0.35 for anything small (the Moon, planets, stars at today's sizes); large objects get a looser
+ * threshold, up to 0.8, so you do not have to pinpoint the middle of a big galaxy.
  */
-// Parameters are unused until the threshold scales with size; callers already pass them.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function centeredThreshold(_radiusPx: number, _viewport: Viewport): number {
-  return CENTERED_THRESHOLD;
+export function centeredThreshold(radiusPx: number, viewport: Viewport): number {
+  const half = Math.min(viewport.width, viewport.height) / 2;
+  return Math.max(CENTERED_THRESHOLD, Math.min(0.8, (0.8 * radiusPx) / half));
 }

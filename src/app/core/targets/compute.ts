@@ -1,4 +1,5 @@
 import type { GeoPosition } from '../astro/ephemeris';
+import { fixedSkyTargetState } from './providers/fixed-sky';
 import { moonTargetState } from './providers/moon';
 import { solarSystemTargetState } from './providers/solar-system';
 import type { TargetDef, TargetState } from './target.types';
@@ -11,6 +12,8 @@ export function computeTargetState(def: TargetDef, date: Date, observer: GeoPosi
     case 'sun':
     case 'planet':
       return solarSystemTargetState(def, date, observer);
+    case 'fixed':
+      return fixedSkyTargetState(def, date, observer);
     default:
       throw new Error(`No provider for target "${def.id}" (kind "${def.kind}") yet.`);
   }

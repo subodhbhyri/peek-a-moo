@@ -14,6 +14,7 @@ export function moonTargetState(date: Date, observer: GeoPosition): TargetState 
     magnitude: Illumination(Body.Moon, date).mag,
     angularSizeDeg: m.angularDiameterDeg,
     phase: {
+      kind: 'moon',
       illuminatedFraction: m.illuminatedFraction,
       phaseDeg: m.phaseDeg,
       name: m.phaseName,

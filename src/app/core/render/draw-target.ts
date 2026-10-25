@@ -1,5 +1,7 @@
 import type { SkyFrame } from '../engine/sky-engine.service';
+import { drawExtended } from './draw-extended';
 import { drawPlanet } from './draw-planet';
+import { drawStar } from './draw-star';
 import { drawSun } from './draw-sun';
 import { drawMoonPhase } from './moon-phase';
 
@@ -22,6 +24,12 @@ export function drawTarget(ctx: CanvasRenderingContext2D, frame: SkyFrame): void
       return;
     case 'sun':
       drawSun(ctx, frame);
+      return;
+    case 'star':
+      drawStar(ctx, frame);
+      return;
+    case 'extended':
+      drawExtended(ctx, frame);
       return;
     default:
       throw new Error(`Render style "${frame.def.render}" is not implemented yet.`);

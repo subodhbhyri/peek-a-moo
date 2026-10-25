@@ -27,6 +27,8 @@ import {
 export interface SkyFrame {
   def: TargetDef;
   target: TargetState;
+  /** The viewport this frame was projected with (renderers need it for size-dependent decisions). */
+  viewport: Viewport;
   projection: ScreenProjection;
   radiusPx: number;
   /**
@@ -125,6 +127,7 @@ export class SkyEngineService {
       return {
         def,
         target,
+        viewport,
         projection,
         radiusPx,
         brightLimbRad,
@@ -150,6 +153,7 @@ export class SkyEngineService {
     return {
       def,
       target,
+      viewport,
       projection,
       radiusPx,
       brightLimbRad,

@@ -11,8 +11,12 @@ import {
 } from '@angular/core';
 import { displayedVerticalFovDeg } from '../../core/projection/camera-fov';
 import { CameraFovService } from '../../core/projection/camera-fov.service';
-import type { MoonPhaseName } from '../../core/astro/ephemeris';
-import { targetFoundLine, targetFoundToast } from '../../core/personality/target-lines';
+import {
+  NOT_VISIBLE_NOTE,
+  isNotNakedEye,
+  targetFoundLine,
+  targetFoundToast,
+} from '../../core/personality/target-lines';
 import { FindLineContext, selectFindLine } from '../../core/personality/find-lines';
 import { StatsService } from '../../core/personality/stats.service';
 import { phaseEmoji } from '../../core/render/phase-emoji';
@@ -208,12 +212,12 @@ export class SkyView implements AfterViewInit {
     const updated = this.stats.recordFind(targetId, durationMs);
     // The Moon is the only target with a face, lines and a phase emoji so far (Phase 7 adds the rest).
     const phase = target.phase;
-    if (this.selection.selected().kind === 'moon' && phase) {
+    if (this.selection.selected().kind === 'moon' && phase?.kind === 'moon') {
       const ctx: FindLineContext = {
         sessionFindIndex: findIndex,
         lifetimeFindCount: updated.lifetime.finds,
         durationMs,
-        moonPhase: phase.name as MoonPhaseName,
+        moonPhase: phase.name,
         moonAltitudeDeg: target.altitudeDeg,
         sunAltitudeDeg: target.sunAltitudeDeg ?? 0,
         localHour: new Date().getHours(),
@@ -221,13 +225,18 @@ export class SkyView implements AfterViewInit {
       const { text } = selectFindLine(ctx, this.stats.stats().recentLines);
       this.stats.recordLineShown(text);
       this.faceRef().say(text);
-      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name as MoonPhaseName) });
+      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name) });
     } else {
       // No face for anything but the Moon. One factual line plus the toast (Phase 7 adds voices).
       const def = this.selection.selected();
       const line = targetFoundLine(def.id);
       if (line) this.showFoundLine(line);
-      this.cornerRef().show({ durationMs, emoji: '', text: targetFoundToast(def, durationMs) });
+      this.cornerRef().show({
+        durationMs,
+        emoji: '',
+        text: targetFoundToast(def, durationMs),
+        note: isNotNakedEye(target.magnitude) ? NOT_VISIBLE_NOTE : undefined,
+      });
     }
     try {
       navigator.vibrate?.(30);

@@ -8,6 +8,8 @@ export interface FindStat {
   emoji: string;
   /** Full toast text for non-Moon targets; when absent the v1 Moon wording is used. */
   text?: string;
+  /** Small extra line under the toast. */
+  note?: string;
 }
 
 /**
@@ -22,6 +24,9 @@ export interface FindStat {
       <button type="button" class="pill" [class.visible]="visible()" (click)="share(p)">
         {{ copied() ? 'Copied!' : label(p) }}
       </button>
+      @if (p.note) {
+        <p class="note" [class.visible]="visible()">{{ p.note }}</p>
+      }
     }
   `,
   styles: `
@@ -29,6 +34,20 @@ export interface FindStat {
       position: absolute;
       right: max(1rem, env(safe-area-inset-right));
       bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    .note {
+      margin: 0.35rem 0 0;
+      max-width: 15rem;
+      text-align: right;
+      font-family: system-ui, sans-serif;
+      font-size: 0.7rem;
+      color: #e9e6dc;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .note.visible {
+      opacity: 0.6;
     }
     .pill {
       font: inherit;

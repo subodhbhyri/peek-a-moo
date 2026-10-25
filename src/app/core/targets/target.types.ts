@@ -1,3 +1,4 @@
+import type { MoonPhaseName } from '../astro/ephemeris';
 import type { Vec3 } from '../math/vec3';
 
 export type TargetKind = 'moon' | 'sun' | 'planet' | 'fixed' | 'satellite';
@@ -14,12 +15,19 @@ export interface TargetDef {
   /** One line for the picker. */
   blurb: string;
   render: RenderStyle;
+  /** J2000 (ICRS) coordinates for fixed-sky targets. */
   fixed?: {
     raHours: number;
     decDeg: number;
-    magnitude: number; // J2000
+    /** null when not meaningful (the Galactic Center is not visible to the eye). */
+    magnitude: number | null;
     sizeDeg?: [major: number, minor: number];
+    /** Degrees, from north through east. */
     positionAngleDeg?: number;
+    /** How an extended object is drawn. */
+    style?: ExtendedStyle;
+    /** B-V color index, for star colors. */
+    bv?: number;
   };
   body?:
     'Sun' | 'Moon' | 'Mercury' | 'Venus' | 'Mars' | 'Jupiter' | 'Saturn' | 'Uranus' | 'Neptune';
@@ -27,6 +35,8 @@ export interface TargetDef {
   /** Sun and planets: how to draw the disc, and the radius its angular size is computed from. */
   planet?: PlanetStyle;
 }
+
+export type ExtendedStyle = 'galaxy' | 'nebula' | 'cluster' | 'marker';
 
 export interface PlanetStyle {
   /** Equatorial radius, km. */
@@ -37,6 +47,24 @@ export interface PlanetStyle {
   phased?: boolean;
   rings?: boolean;
   bands?: boolean;
+}
+
+/** 'new' | 'crescent' | 'quarter' | 'gibbous' | 'full': no waxing/waning, the lit limb shows that. */
+export type PlanetPhaseName = 'new' | 'crescent' | 'quarter' | 'gibbous' | 'full';
+
+export interface MoonPhaseInfo {
+  kind: 'moon';
+  illuminatedFraction: number;
+  /** 0 = new, 180 = full. */
+  phaseDeg: number;
+  name: MoonPhaseName;
+}
+
+export interface PlanetPhaseInfo {
+  kind: 'planet';
+  illuminatedFraction: number;
+  phaseDeg: number;
+  name: PlanetPhaseName;
 }
 
 /** Computed position/appearance of a target at a moment. See ARCHITECTURE §5.2. */
@@ -51,11 +79,8 @@ export interface TargetState {
   magnitude: number | null;
   /** True size; the renderer decides display size. */
   angularSizeDeg: number;
-  /**
-   * Moon, Mercury, Venus. For the Moon `name` is a MoonPhaseName; for planets it is one of
-   * 'new' | 'crescent' | 'quarter' | 'gibbous' | 'full' (no waxing/waning: the lit limb shows that).
-   */
-  phase?: { illuminatedFraction: number; phaseDeg: number; name: string };
+  /** Moon, Mercury, Venus. Discriminated on `kind`, so Moon-only code narrows without casts. */
+  phase?: MoonPhaseInfo | PlanetPhaseInfo;
   /** Saturn: ring tilt away from the line of sight, degrees (signed). */
   rings?: { tiltDeg: number };
   /** For lit-limb orientation (Moon, inner planets). */
