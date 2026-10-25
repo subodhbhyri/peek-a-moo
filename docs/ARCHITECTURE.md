@@ -46,6 +46,8 @@ The ephemeris, projection and W3C rotation math check out on review (and the rot
 | C | **Camera mode FOV mismatch.** Overlay uses a fixed 62° vertical FOV, but the video is cropped by `object-fit: cover`, so the real visible FOV differs per phone and orientation. Objects off-center drift from their real spot. | `V_FOV_DEG = 62` constant, no relation to the video. | Derive displayed FOV from the video size + crop, with a per-device adjustable sensor FOV. |
 | D | Lack of field data. | No way to see what was off. | Debug "Copy report" button that dumps a JSON snapshot. |
 
+> **Phase 1 field result (2026-10-25, iPhone, iOS 26.6.1):** drawn Moon matched the real Moon without alignment. Upright `webkitCompassHeading` (249.2° magnetic) agreed with flat-calibrated pointing (248.1° magnetic) within ~1°, so suspect A did not reproduce on this device; flat-only calibration stays as the safer design. Android and camera-mode FOV are still unverified.
+
 ## 5. Core model (introduced in Phase 2)
 
 ### 5.1 Target definitions (static catalog)
