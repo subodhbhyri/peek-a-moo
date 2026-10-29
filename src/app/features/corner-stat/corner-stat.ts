@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { shareMessage, shareUrl } from '../../core/targets/share';
 
 const VISIBLE_MS = 5000;
 const COPIED_FLASH_MS = 1500;
@@ -10,6 +11,8 @@ export interface FindStat {
   text?: string;
   /** Small extra line under the toast. */
   note?: string;
+  /** Which target was found, so the shared link opens straight into it. */
+  targetId?: string;
 }
 
 /**
@@ -97,7 +100,8 @@ export class CornerStat {
 
   protected async share(p: FindStat): Promise<void> {
     const text = this.label(p);
-    const url = typeof location !== 'undefined' ? location.href : undefined;
+    const url =
+      typeof location !== 'undefined' && p.targetId ? shareUrl(p.targetId, location) : undefined;
     const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
     try {
       if (nav.share) {
@@ -108,7 +112,7 @@ export class CornerStat {
       // user cancelled the share sheet, or it's unsupported — fall through to clipboard
     }
     try {
-      await navigator.clipboard.writeText(url ? `${text} ${url}` : text);
+      await navigator.clipboard.writeText(url ? shareMessage(text, url) : text);
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), COPIED_FLASH_MS);
     } catch {

@@ -114,6 +114,7 @@ export class SkyView implements AfterViewInit {
   protected readonly foundLine = signal<string | null>(null);
   private foundLineTimer: ReturnType<typeof setTimeout> | null = null;
   private announcedVisible = false;
+  private lastTargetId: string | null = null;
   private rafId = 0;
   private dpr = 1;
   private viewport: Viewport = { width: 1, height: 1, vFovDeg: V_FOV_DEG };
@@ -225,7 +226,7 @@ export class SkyView implements AfterViewInit {
       const { text } = selectFindLine(ctx, this.stats.stats().recentLines);
       this.stats.recordLineShown(text);
       this.faceRef().say(text);
-      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name) });
+      this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name), targetId });
     } else {
       // No face for anything but the Moon. One factual line plus the toast (Phase 7 adds voices).
       const def = this.selection.selected();
@@ -235,6 +236,7 @@ export class SkyView implements AfterViewInit {
         durationMs,
         emoji: '',
         text: targetFoundToast(def, durationMs),
+        targetId,
         note: isNotNakedEye(target.magnitude) ? NOT_VISIBLE_NOTE : undefined,
       });
     }
@@ -301,6 +303,11 @@ export class SkyView implements AfterViewInit {
       return;
     }
 
+    if (frame.def.id !== this.lastTargetId) {
+      // New target: let its intro show again until it first appears.
+      this.lastTargetId = frame.def.id;
+      this.announcedVisible = false;
+    }
     if (this.engine.trackerPaused()) {
       this.faceRef().clearSpeech();
       this.clearFoundLine();

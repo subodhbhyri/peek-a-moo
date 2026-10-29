@@ -9,21 +9,41 @@
 ></video>
 
 <app-sky-view (moonVisible)="moonSeen.set(true)" />
+@if (gate() === 'running') {
+  <button
+    type="button"
+    class="target-chip"
+    [class.below-banner]="isSun()"
+    aria-haspopup="dialog"
+    [attr.aria-label]="'Target: ' + selectedDef().name + '. Change target'"
+    (click)="openPicker()"
+  >
+    <span aria-hidden="true">{{ glyph(selectedDef()) }}</span>
+    {{ selectedDef().shortName }} ▾
+  </button>
+}
+<app-target-picker [open]="pickerOpen()" (closed)="pickerOpen.set(false)" />
 <app-align-control />
 <app-camera-settings />
 
 @if (showIntro() && !calibrationBanner()) {
   <main class="intro">
-    <h1>Find the moon.</h1>
+    <h1>Find {{ selectedDef().nameInSentence }}.</h1>
     <p>Move your phone until it appears.</p>
+    @if (gate() === 'running') {
+      <button type="button" class="link" (click)="openPicker()">or pick something else ▾</button>
+    }
+    @if (introNoteText(); as note) {
+      <p class="small note">{{ note }}</p>
+    }
     @switch (gate()) {
       @case ('needs-tap') {
         <p class="small">Tap anywhere to begin</p>
       }
       @case ('motion-denied') {
         <p class="small">
-          Motion access was denied. Reload the page and choose Allow when Safari asks, to find the
-          moon.
+          Motion access was denied. Reload the page and choose Allow when Safari asks, to find
+          {{ selectedDef().nameInSentence }}.
         </p>
       }
     }

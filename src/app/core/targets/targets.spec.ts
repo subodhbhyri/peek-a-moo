@@ -18,6 +18,19 @@ describe('catalog', () => {
     expect(getTarget(DEFAULT_TARGET_ID)).toBeDefined();
   });
 
+  it('every entry has a sentence name and a short name', () => {
+    for (const t of TARGETS) {
+      expect(t.nameInSentence.trim(), t.id).not.toBe('');
+      expect(t.shortName.trim(), t.id).not.toBe('');
+      // The sentence name contains the name (optionally behind "the "), so "Find {nameInSentence}." reads right.
+      expect(t.nameInSentence.replace(/^the /, ''), t.id).toBe(t.name);
+    }
+    expect(getTarget('moon')!.nameInSentence).toBe('the Moon');
+    expect(getTarget('jupiter')!.nameInSentence).toBe('Jupiter');
+    expect(getTarget('m31')!.shortName).toBe('Andromeda');
+    expect(getTarget('lmc')!.shortName).toBe('LMC');
+  });
+
   it('getTarget returns undefined for unknown ids', () => {
     expect(getTarget('nope')).toBeUndefined();
     expect(getTarget('')).toBeUndefined();
@@ -59,6 +72,8 @@ describe('computeTargetState', () => {
     const iss: TargetDef = {
       id: 'iss',
       name: 'ISS',
+      nameInSentence: 'the ISS',
+      shortName: 'ISS',
       kind: 'satellite',
       category: 'satellites',
       blurb: '',

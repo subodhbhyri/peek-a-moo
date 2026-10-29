@@ -10,6 +10,10 @@ export interface TargetDef {
   /** URL-safe, stable (used in ?target= and stats). */
   id: string;
   name: string;
+  /** For sentences: "the Moon", "Jupiter", "the Andromeda Galaxy". */
+  nameInSentence: string;
+  /** For chips; may equal `name`. */
+  shortName: string;
   kind: TargetKind;
   category: TargetCategory;
   /** One line for the picker. */

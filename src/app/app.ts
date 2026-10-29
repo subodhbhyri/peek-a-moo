@@ -12,6 +12,8 @@ import {
 } from '@angular/core';
 import { City } from './core/data/cities';
 import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
+import { AvailabilityService } from './core/targets/availability.service';
+import { introNote } from './core/targets/availability-format';
 import { TargetSelectionService } from './core/targets/target-selection.service';
 import { CameraFovService } from './core/projection/camera-fov.service';
 import { SkyEngineService } from './core/engine/sky-engine.service';
@@ -24,6 +26,8 @@ import { CameraSettings } from './features/camera-settings/camera-settings';
 import { CityPicker } from './features/city-picker/city-picker';
 import { DebugOverlay } from './features/debug-overlay/debug-overlay';
 import { SkyView } from './features/sky-view/sky-view';
+import { TargetPicker } from './features/target-picker/target-picker';
+import { targetGlyph } from './features/target-picker/target-glyph';
 
 /**
  * First-run flow.
@@ -38,7 +42,7 @@ type Gate = 'needs-tap' | 'starting' | 'running' | 'motion-denied';
 
 @Component({
   selector: 'app-root',
-  imports: [SkyView, DebugOverlay, CityPicker, AlignControl, CameraSettings],
+  imports: [SkyView, DebugOverlay, CityPicker, AlignControl, CameraSettings, TargetPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -51,6 +55,7 @@ export class App {
   private readonly wakeLock = inject(WakeLockService);
   private readonly cameraFov = inject(CameraFovService);
   private readonly selection = inject(TargetSelectionService);
+  private readonly availability = inject(AvailabilityService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
 
@@ -69,6 +74,15 @@ export class App {
   protected readonly calibrationBanner = signal<'flat' | 'stuck' | 'raise' | null>(null);
   /** Sun safety: banner on, camera off, alignment off. */
   protected readonly isSun = computed(() => this.selection.selected().kind === 'sun');
+  protected readonly selectedDef = this.selection.selected;
+  protected readonly glyph = targetGlyph;
+  protected readonly pickerOpen = signal(false);
+  /** One honest sentence when the target is not simply visible right now (null otherwise). */
+  protected readonly introNoteText = computed(() => {
+    const def = this.selection.selected();
+    const a = this.availability.byId()[def.id];
+    return a ? introNote(a, def, new Date(), navigator.language || 'en-US') : null;
+  });
   protected readonly sunBanner = SUN_SAFETY_BANNER;
   protected readonly sunCameraNote = SUN_CAMERA_NOTE;
   protected readonly cameraError = signal<string | null>(null);
@@ -100,6 +114,34 @@ export class App {
 
   constructor() {
     if (this.gate() === 'starting') this.start();
+
+    // A new target (or a shared link) gets its own intro, with its availability computed up front.
+    effect(() => {
+      const def = this.selection.selected();
+      this.location.position();
+      untracked(() => {
+        this.moonSeen.set(false);
+        this.availability.ensure(def);
+      });
+    });
+
+    // Desktop / drag mode: "t" opens the picker.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 't' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      const s = this.orientationStatus();
+      if (
+        this.pickerOpen() ||
+        !(s === 'unsupported' || s === 'no-compass' || s === 'manual' || s === 'idle')
+      ) {
+        return;
+      }
+      this.pickerOpen.set(true);
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    this.destroyRef.onDestroy(() => window.removeEventListener('keydown', onKey));
 
     // Selecting the Sun while the camera is on turns the camera off.
     effect(() => {
@@ -140,6 +182,10 @@ export class App {
     };
     document.addEventListener('visibilitychange', onVisibility);
     this.destroyRef.onDestroy(() => document.removeEventListener('visibilitychange', onVisibility));
+  }
+
+  protected openPicker(): void {
+    this.pickerOpen.set(true);
   }
 
   protected onTap(): void {

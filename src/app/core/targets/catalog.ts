@@ -7,6 +7,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'moon',
     name: 'Moon',
+    nameInSentence: 'the Moon',
+    shortName: 'Moon',
     kind: 'moon',
     category: 'solar-system',
     blurb: 'Our nearest neighbour, and a bit awkward about it.',
@@ -16,6 +18,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'sun',
     name: 'Sun',
+    nameInSentence: 'the Sun',
+    shortName: 'Sun',
     kind: 'sun',
     category: 'solar-system',
     blurb: 'Our star. Never look at it directly, or through a camera.',
@@ -26,6 +30,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'mercury',
     name: 'Mercury',
+    nameInSentence: 'Mercury',
+    shortName: 'Mercury',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The smallest planet, never far from the Sun in the sky.',
@@ -36,6 +42,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'venus',
     name: 'Venus',
+    nameInSentence: 'Venus',
+    shortName: 'Venus',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The brightest planet, often the first "star" of the evening.',
@@ -46,6 +54,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'mars',
     name: 'Mars',
+    nameInSentence: 'Mars',
+    shortName: 'Mars',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The red planet, tinted by iron-rich dust.',
@@ -56,6 +66,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'jupiter',
     name: 'Jupiter',
+    nameInSentence: 'Jupiter',
+    shortName: 'Jupiter',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The largest planet, with a mass of about 2.5 times all the others combined.',
@@ -66,6 +78,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'saturn',
     name: 'Saturn',
+    nameInSentence: 'Saturn',
+    shortName: 'Saturn',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The ringed planet; its rings are mostly water ice.',
@@ -76,6 +90,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'uranus',
     name: 'Uranus',
+    nameInSentence: 'Uranus',
+    shortName: 'Uranus',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'An ice giant that orbits tilted on its side; just at the edge of naked-eye visibility.',
@@ -86,6 +102,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'neptune',
     name: 'Neptune',
+    nameInSentence: 'Neptune',
+    shortName: 'Neptune',
     kind: 'planet',
     category: 'solar-system',
     blurb: 'The farthest planet, too faint to see without binoculars.',
@@ -96,6 +114,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'polaris',
     name: 'Polaris',
+    nameInSentence: 'Polaris',
+    shortName: 'Polaris',
     kind: 'fixed',
     category: 'stars',
     blurb: 'The North Star: it sits almost exactly over the north celestial pole.',
@@ -105,6 +125,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'sirius',
     name: 'Sirius',
+    nameInSentence: 'Sirius',
+    shortName: 'Sirius',
     kind: 'fixed',
     category: 'stars',
     blurb: 'The brightest star in the night sky, only 8.6 light-years away.',
@@ -114,6 +136,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'betelgeuse',
     name: 'Betelgeuse',
+    nameInSentence: 'Betelgeuse',
+    shortName: 'Betelgeuse',
     kind: 'fixed',
     category: 'stars',
     blurb: 'A red supergiant marking the shoulder of Orion.',
@@ -123,6 +147,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'vega',
     name: 'Vega',
+    nameInSentence: 'Vega',
+    shortName: 'Vega',
     kind: 'fixed',
     category: 'stars',
     blurb: 'A blue-white star high overhead on summer evenings, 25 light-years away.',
@@ -132,6 +158,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'arcturus',
     name: 'Arcturus',
+    nameInSentence: 'Arcturus',
+    shortName: 'Arcturus',
     kind: 'fixed',
     category: 'stars',
     blurb: 'An orange giant, the brightest star in the northern sky.',
@@ -141,6 +169,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'm31',
     name: 'Andromeda Galaxy',
+    nameInSentence: 'the Andromeda Galaxy',
+    shortName: 'Andromeda',
     kind: 'fixed',
     category: 'deep-sky',
     blurb: 'The nearest big galaxy, 2.5 million light-years away; a faint smudge under dark skies.',
@@ -157,6 +187,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'm42',
     name: 'Orion Nebula',
+    nameInSentence: 'the Orion Nebula',
+    shortName: 'Orion Nebula',
     kind: 'fixed',
     category: 'deep-sky',
     blurb: 'A stellar nursery 1,300 light-years away, visible to the eye in the sword of Orion.',
@@ -173,6 +205,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'm45',
     name: 'Pleiades',
+    nameInSentence: 'the Pleiades',
+    shortName: 'Pleiades',
     kind: 'fixed',
     category: 'deep-sky',
     blurb:
@@ -190,6 +224,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'galactic-center',
     name: 'Galactic Center',
+    nameInSentence: 'the Galactic Center',
+    shortName: 'Galactic Center',
     kind: 'fixed',
     category: 'deep-sky',
     blurb:
@@ -207,6 +243,8 @@ export const TARGETS: readonly TargetDef[] = [
   {
     id: 'lmc',
     name: 'Large Magellanic Cloud',
+    nameInSentence: 'the Large Magellanic Cloud',
+    shortName: 'LMC',
     kind: 'fixed',
     category: 'deep-sky',
     blurb:
