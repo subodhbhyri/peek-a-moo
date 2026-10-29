@@ -23,7 +23,10 @@ describe('catalog', () => {
       expect(t.nameInSentence.trim(), t.id).not.toBe('');
       expect(t.shortName.trim(), t.id).not.toBe('');
       // The sentence name contains the name (optionally behind "the "), so "Find {nameInSentence}." reads right.
-      expect(t.nameInSentence.replace(/^the /, ''), t.id).toBe(t.name);
+      // Satellites are the exception: "the ISS" for the International Space Station.
+      if (t.kind !== 'satellite') {
+        expect(t.nameInSentence.replace(/^the /, ''), t.id).toBe(t.name);
+      }
     }
     expect(getTarget('moon')!.nameInSentence).toBe('the Moon');
     expect(getTarget('jupiter')!.nameInSentence).toBe('Jupiter');
@@ -68,7 +71,7 @@ describe('computeTargetState', () => {
     expect(thin.magnitude!).toBeGreaterThan(full.magnitude!);
   });
 
-  it('throws a clear error for kinds without a provider yet', () => {
+  it('a satellite without loaded orbit data throws a clear error (Phase 6: it has a provider now)', () => {
     const iss: TargetDef = {
       id: 'iss',
       name: 'ISS',
@@ -78,7 +81,7 @@ describe('computeTargetState', () => {
       category: 'satellites',
       blurb: '',
       render: 'satellite',
-      satellite: { noradId: 25544 },
+      satellite: { noradId: 25544, magnitude: -3.5 },
     };
     expect(() => computeTargetState(iss, new Date(), POS)).toThrow(/No provider.*iss/);
   });

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { GP_FIXTURE } from '../../core/gp/testing/gp-fixture';
 import { StatsService } from '../../core/personality/stats.service';
 import type { Availability } from '../../core/targets/availability';
 import { AvailabilityService } from '../../core/targets/availability.service';
@@ -49,12 +50,18 @@ describe('TargetPicker', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // The Satellites section asks for orbit data as soon as the sheet shows it.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(GP_FIXTURE), { status: 200 })),
+    );
     localStorage.clear();
     history.replaceState(null, '', '/');
     TestBed.inject(LocationService).setManual(POS);
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 
@@ -75,9 +82,9 @@ describe('TargetPicker', () => {
       qa('h3')
         .map((h) => h.textContent!.trim())
         .filter((t) => t !== 'Best right now'),
-    ).toEqual(['Solar system', 'Stars', 'Deep sky']);
+    ).toEqual(['Solar system', 'Stars', 'Deep sky', 'Satellites']);
     // Within a section the order is the catalog's, not re-sorted by availability.
-    const expected = ['solar-system', 'stars', 'deep-sky'].flatMap((c) =>
+    const expected = ['solar-system', 'stars', 'deep-sky', 'satellites'].flatMap((c) =>
       TARGETS.filter((t) => t.category === c).map((t) => t.name),
     );
     expect(rowNames()).toEqual(expected);
@@ -89,6 +96,7 @@ describe('TargetPicker', () => {
     expect(qa('.skeleton').length).toBe(TARGETS.length - 1);
     expect(qa('.status')).toHaveLength(1);
     await settle();
+    await settle(); // orbit data arrives after the first pass; the satellite rows fill in on the second
     expect(qa('.skeleton')).toHaveLength(0);
     expect(qa('.status')).toHaveLength(TARGETS.length);
     expect(rowFor('Galactic Center').querySelector('.status')!.textContent).toMatch(
@@ -293,6 +301,21 @@ describe('TargetPicker', () => {
       expect(qa('h3').some((h) => h.textContent!.includes('Best right now'))).toBe(false);
     });
 
+    it('a satellite is in it only when overhead and visible ("look fast"), brightest first', () => {
+      create(false);
+      seed({
+        iss: av('iss', -3.5, 'up-visible'), // overhead now and visible
+        tiangong: av('tiangong', -1.5, 'up-daylight'), // overhead but not visible
+        hubble: av('hubble', 1.5, 'below-horizon'),
+        mars: av('mars', 1.0, 'up-visible'),
+      });
+      setOpen(true);
+      const chips = qa('.chip').map((c) => c.textContent!.replace(/\s+/g, ' ').trim());
+      expect(chips).toHaveLength(2);
+      expect(chips[0]).toContain('ISS');
+      expect(chips[1]).toContain('Mars');
+    });
+
     it('a chip selects its target', () => {
       create(false);
       seed({ venus: av('venus', -4, 'up-visible') });
@@ -300,6 +323,68 @@ describe('TargetPicker', () => {
       qa('.chip')[0].click();
       expect(TestBed.inject(TargetSelectionService).selectedId()).toBe('venus');
       expect(closed).toBe(1);
+    });
+  });
+
+  describe('Satellites section', () => {
+    const gpCalls = () =>
+      (fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.filter(
+        (c) => String(c[0]) === '/api/gp',
+      );
+
+    it('asks for orbit data the first time it renders, and not before the sheet opens', async () => {
+      create(false);
+      await settle();
+      expect(gpCalls()).toHaveLength(0);
+      setOpen(true);
+      await settle();
+      expect(gpCalls()).toHaveLength(1);
+      setOpen(false);
+      setOpen(true);
+      await settle();
+      expect(gpCalls()).toHaveLength(1); // memory copy is fresh
+    });
+
+    it('shows skeletons until the data arrives, then a pass label per satellite', async () => {
+      create();
+      expect(rowFor('International Space Station').querySelector('.skeleton')).not.toBeNull();
+      await settle();
+      await settle();
+      for (const name of ['International Space Station', 'Tiangong', 'Hubble']) {
+        const status = rowFor(name).querySelector('.status')!.textContent!;
+        expect(status, name).toMatch(/^(Overhead now|Visible pass|No visible passes today)/);
+      }
+    });
+
+    it('on total failure the rows say "Orbit data unavailable"', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response('nope', { status: 500 })),
+      );
+      create();
+      await settle();
+      await settle();
+      for (const name of ['International Space Station', 'Tiangong', 'Hubble']) {
+        expect(rowFor(name).querySelector('.status')!.textContent).toBe('Orbit data unavailable');
+      }
+      // Non-satellite rows are unaffected.
+      expect(rowFor('Jupiter').querySelector('.status')).not.toBeNull();
+    });
+
+    it('a satellite is never in "Best right now" unless it is overhead and visible', async () => {
+      create();
+      await settle();
+      await settle();
+      const best = qa('.chips .chip').map((c) => c.textContent!.trim());
+      const isOverheadVisible = (id: string) =>
+        TestBed.inject(AvailabilityService).byId()[id]?.visibleNow === true;
+      for (const [id, short] of [
+        ['iss', 'ISS'],
+        ['tiangong', 'Tiangong'],
+        ['hubble', 'Hubble'],
+      ]) {
+        if (!isOverheadVisible(id)) expect(best.some((b) => b.includes(short))).toBe(false);
+      }
     });
   });
 });

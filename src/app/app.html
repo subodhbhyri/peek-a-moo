@@ -22,6 +22,11 @@
     {{ selectedDef().shortName }} ▾
   </button>
 }
+@if (orbitStatus(); as status) {
+  <p class="orbit-status" role="status">
+    {{ status === 'loading' ? 'Getting orbit data…' : 'Orbit data unavailable' }}
+  </p>
+}
 <app-target-picker [open]="pickerOpen()" (closed)="pickerOpen.set(false)" />
 <app-align-control />
 <app-camera-settings />

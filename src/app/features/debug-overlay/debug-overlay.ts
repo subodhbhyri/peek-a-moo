@@ -52,7 +52,10 @@ target   {{ target()?.id }} az {{ target()?.azimuthDeg | number: '1.1-1' }}  alt
          mag {{ target()?.magnitude | number: '1.1-1' }}  size {{
         (target()?.angularSizeDeg ?? 0) * 60 | number: '1.1-1'
       }}′
-Δ to target az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}</pre>
+Δ to target az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}@if (sat(); as s) {
+sat     NORAD {{ s.noradId }}  elements {{ s.ageDays | number: '1.1-1' }} d old  {{
+          s.sunlit ? 'sunlit' : 'in shadow'
+        }}  range {{ s.rangeKm | number: '1.0-0' }} km}</pre>
     <select aria-label="Target" [value]="selection.selectedId()" (change)="pick($event)">
       @for (t of targets; track t.id) {
         <option [value]="t.id" [selected]="t.id === selection.selectedId()">{{ t.name }}</option>
@@ -189,6 +192,7 @@ export class DebugOverlay {
       pointing: d && { az: d.pointingAz, alt: d.pointingAlt, roll: d.roll },
       targetId: m?.id ?? this.selection.selectedId(),
       target: m && { id: m.id, az: m.azimuthDeg, alt: m.altitudeDeg },
+      satellite: this.sat(),
       appVersion: this.appVersion,
     });
     const text = JSON.stringify(report, null, 2);
@@ -211,6 +215,13 @@ export class DebugOverlay {
   protected select(e: Event): void {
     (e.target as HTMLTextAreaElement).select();
   }
+
+  /** Satellite readout: NORAD id, element age, sunlit, range. */
+  protected readonly sat = computed(() => {
+    const s = this.target()?.satellite;
+    const noradId = this.selection.selected().satellite?.noradId;
+    return s && noradId !== undefined ? { ...s, noradId } : null;
+  });
 
   protected readonly delta = computed(() => {
     const d = this.d(),

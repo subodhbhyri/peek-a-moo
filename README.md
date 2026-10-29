@@ -71,3 +71,10 @@ git push
 ```
 
 Vercel auto-deploys the `main` branch to production on push. Nothing else to configure — `vercel.json` already points at the right build output.
+
+## 6. Satellites and orbit data (ISS, Tiangong, Hubble)
+
+The only network call the app makes is for public orbital elements, and only once a satellite is selected or the picker's Satellites section is on screen. The browser asks our own `/api/gp` ([api/gp.ts](api/gp.ts), a Vercel Function), which fetches a fixed whitelist from CelesTrak (`FORMAT=JSON`, never retried) and is cached at the edge for 2 hours.
+
+- `ng serve` does not run Vercel functions, so in development the app falls back to the bundled snapshot, [public/data/gp-fallback.json](public/data/gp-fallback.json). To exercise the real endpoint locally, run `npx vercel dev` and open the URL it prints (`/api/gp` should return 3 element sets).
+- Refresh the bundled snapshot with `npm run gp:refresh` (same whitelist and rules; exits non-zero on any non-200 and writes nothing), then commit the file.

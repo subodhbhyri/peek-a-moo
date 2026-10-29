@@ -35,7 +35,11 @@ export interface TargetDef {
   };
   body?:
     'Sun' | 'Moon' | 'Mercury' | 'Venus' | 'Mars' | 'Jupiter' | 'Saturn' | 'Uranus' | 'Neptune';
-  satellite?: { noradId: number };
+  satellite?: {
+    noradId: number;
+    /** Typical brightness when sunlit; the state's magnitude is null in Earth's shadow. */
+    magnitude: number;
+  };
   /** Sun and planets: how to draw the disc, and the radius its angular size is computed from. */
   planet?: PlanetStyle;
 }
@@ -91,7 +95,16 @@ export interface TargetState {
   sunDirection?: Vec3;
   /** For orienting extended objects on screen. */
   skyNorthDirection?: Vec3;
-  satellite?: { sunlit: boolean; velocityDegPerSec: Vec3; tleAgeDays: number };
+  /** Satellites (Phase 6). `trail` is directions at t-1 s ... t-12 s, newest first. */
+  satellite?: {
+    sunlit: boolean;
+    rangeKm: number;
+    /** Age of the element set at `computedAt`. 3-14 days: approximate; more: stale. */
+    ageDays: number;
+    approximate: boolean;
+    stale: boolean;
+    trail: Vec3[];
+  };
   /**
    * Added in Phase 2 (not in ARCHITECTURE §5.2): Sun altitude at `computedAt`. The find-line selector
    * needs it ("daytime Moon"), and the Moon provider already has it for free.

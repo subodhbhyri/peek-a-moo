@@ -1,5 +1,6 @@
 import { DEG } from '../math/vec3';
 import { Viewport, displayRadiusPx, focalLengthPx } from '../projection/projection';
+import { SATELLITE_CORE_PX } from '../render/draw-satellite';
 import { starGlowRadiusPx } from '../render/draw-star';
 import { getTarget } from './catalog';
 import type { TargetState } from './target.types';
@@ -15,10 +16,12 @@ export const MIN_PLANET_FRACTION = 0.035;
  *  - Planets and extended objects (semi-major axis): true size when larger than the minimum sprite,
  *    else the minimum. (Saturn's rings are drawn out to 2.25 globe radii around this radius.)
  *  - Stars: their visible glow radius, from magnitude.
+ *  - Satellites: a fixed dot, whatever their (tiny) true size.
  */
 export function displayRadiusFor(state: TargetState, viewport: Viewport): number {
   const def = getTarget(state.id);
   if (def?.render === 'star') return starGlowRadiusPx(state.magnitude ?? 6);
+  if (def?.render === 'satellite') return SATELLITE_CORE_PX;
   // Planets and extended objects: true size, but never smaller than the minimum sprite.
   if (def?.kind === 'planet' || def?.render === 'extended') {
     const minPx = MIN_PLANET_FRACTION * Math.min(viewport.width, viewport.height);

@@ -12,6 +12,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { GpService } from '../../core/gp/gp.service';
 import { StatsService } from '../../core/personality/stats.service';
 import { AvailabilityService } from '../../core/targets/availability.service';
 import { formatAvailability } from '../../core/targets/availability-format';
@@ -381,6 +382,7 @@ export class TargetPicker {
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
   private readonly stats = inject(StatsService);
+  private readonly gp = inject(GpService);
   private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('sheet');
 
   protected readonly query = signal('');
@@ -433,7 +435,21 @@ export class TargetPicker {
     })).filter((s) => s.rows.length > 0);
   });
 
+  /** True while the Satellites section is on screen (open, and not filtered out by the search). */
+  private readonly satellitesShown = computed(
+    () => this.open() && this.sections().some((s) => s.category === 'satellites'),
+  );
+
   constructor() {
+    // The first time the Satellites section renders, ask for orbit data (never earlier).
+    effect(() => {
+      if (this.satellitesShown()) untracked(() => void this.gp.get());
+    });
+    // Orbit data arriving (or failing) while the sheet is open: fill in the satellite rows.
+    effect(() => {
+      this.gp.stamp();
+      if (this.open()) untracked(() => void this.availability.refreshAll());
+    });
     // On open: remember what had focus, compute availability (instantly showing skeletons), focus the
     // sheet. On close: give focus back.
     effect(() => {

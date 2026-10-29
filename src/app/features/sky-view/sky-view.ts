@@ -14,6 +14,7 @@ import { CameraFovService } from '../../core/projection/camera-fov.service';
 import {
   NOT_VISIBLE_NOTE,
   isNotNakedEye,
+  satelliteFoundNote,
   targetFoundLine,
   targetFoundToast,
 } from '../../core/personality/target-lines';
@@ -35,6 +36,8 @@ const FOUND_LINE_MS = 5000;
 const EDGE_GLOW_DELAY_MS = 20_000;
 const EDGE_GLOW_RAMP_MS = 6_000;
 const EDGE_GLOW_MAX_OPACITY = 0.45;
+/** A moving target gets its edge hint at once: waiting 20 s would mean it is long gone. */
+const MOVING_GLOW_RAMP_MS = 600;
 
 /**
  * Full-screen canvas plus its overlays. Runs its own requestAnimationFrame loop (outside change
@@ -208,7 +211,7 @@ export class SkyView implements AfterViewInit {
   }
 
   private onFound(targetId: string, durationMs: number, findIndex: number): void {
-    const target = this.engine.target();
+    const target = this.engine.currentTarget();
     if (!target || target.id !== targetId) return;
     const updated = this.stats.recordFind(targetId, durationMs);
     // The Moon is the only target with a face, lines and a phase emoji so far (Phase 7 adds the rest).
@@ -237,7 +240,7 @@ export class SkyView implements AfterViewInit {
         emoji: '',
         text: targetFoundToast(def, durationMs),
         targetId,
-        note: isNotNakedEye(target.magnitude) ? NOT_VISIBLE_NOTE : undefined,
+        note: this.notVisibleNote(def.kind, target),
       });
     }
     try {
@@ -245,6 +248,16 @@ export class SkyView implements AfterViewInit {
     } catch {
       // haptics unsupported — silently skip
     }
+  }
+
+  private notVisibleNote(
+    kind: string,
+    target: NonNullable<ReturnType<SkyEngineService['currentTarget']>>,
+  ): string | undefined {
+    if (kind === 'satellite' && target.satellite) {
+      return satelliteFoundNote(target.satellite.sunlit, target.sunAltitudeDeg) ?? undefined;
+    }
+    return isNotNakedEye(target.magnitude) ? NOT_VISIBLE_NOTE : undefined;
   }
 
   private showFoundLine(text: string): void {
@@ -334,11 +347,15 @@ export class SkyView implements AfterViewInit {
 
   private updateEdgeGlow(frame: SkyFrame): void {
     const el = this.glowRef().nativeElement;
-    if (frame.phase !== 'searching' || frame.searchElapsedMs < EDGE_GLOW_DELAY_MS) {
+    // A satellite above the horizon moves too fast to wait 20 s for a hint.
+    const moving = frame.def.kind === 'satellite' && frame.target.altitudeDeg > 0;
+    const delay = moving ? 0 : EDGE_GLOW_DELAY_MS;
+    if (frame.phase !== 'searching' || frame.searchElapsedMs < delay) {
       el.style.opacity = '0';
       return;
     }
-    const ramp = Math.min(1, (frame.searchElapsedMs - EDGE_GLOW_DELAY_MS) / EDGE_GLOW_RAMP_MS);
+    const rampMs = moving ? MOVING_GLOW_RAMP_MS : EDGE_GLOW_RAMP_MS;
+    const ramp = Math.min(1, (frame.searchElapsedMs - delay) / rampMs);
     const { x, y } = edgeGlowPoint(this.viewport, frame.projection.edgeAngleRad, 24);
     el.style.transform = `translate(${x}px, ${y}px)`;
     el.style.opacity = `${ramp * EDGE_GLOW_MAX_OPACITY}`;

@@ -51,6 +51,20 @@ describe('buildDebugReport', () => {
     expect(buildDebugReport({ ...input, alignment: null })['alignment']).toBeNull();
   });
 
+  it('satellite targets add NORAD id, element age, sunlit and range; other targets add nothing', () => {
+    expect(Object.keys(buildDebugReport(input))).not.toContain('satellite');
+    const r = buildDebugReport({
+      ...input,
+      satellite: { noradId: 25544, ageDays: 0.7234, sunlit: false, rangeKm: 1234.56 },
+    });
+    expect(r['satellite']).toEqual({
+      noradId: 25544,
+      elementAgeDays: 0.72,
+      sunlit: false,
+      rangeKm: 1234.6,
+    });
+  });
+
   it('survives missing sensor data and round-trips through JSON', () => {
     const r = buildDebugReport({
       ...input,

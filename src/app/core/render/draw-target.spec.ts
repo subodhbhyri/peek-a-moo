@@ -1,3 +1,4 @@
+import { FIXTURE_ELEMENTS } from '../gp/testing/gp-fixture';
 import type { SkyFrame } from '../engine/sky-engine.service';
 import { DEG } from '../math/vec3';
 import { displayRadiusPx } from '../projection/projection';
@@ -15,7 +16,7 @@ const VP = { width: 400, height: 800, vFovDeg: 62 };
 const DATE = new Date('2026-10-26T15:00:00Z');
 
 function frameFor(def: TargetDef, over: Partial<TargetState> = {}): SkyFrame {
-  const target: TargetState = { ...computeTargetState(def, DATE, POS), ...over };
+  const target: TargetState = { ...computeTargetState(def, DATE, POS, FIXTURE_ELEMENTS), ...over };
   return {
     def,
     target,
@@ -68,7 +69,7 @@ describe('drawTarget dispatch', () => {
   });
 
   it('styles without a renderer yet throw a clear error', () => {
-    const star: TargetDef = { ...getTarget('moon')!, id: 'x', render: 'satellite' };
+    const star: TargetDef = { ...getTarget('moon')!, id: 'x', render: 'hologram' as never };
     expect(() => drawTarget(recordingContext().ctx, { ...frameFor(star), def: star })).toThrow(
       /not implemented/,
     );

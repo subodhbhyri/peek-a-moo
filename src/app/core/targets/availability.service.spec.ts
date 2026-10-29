@@ -53,7 +53,12 @@ describe('AvailabilityService', () => {
     expect(b).toBe(a);
     await vi.runAllTimersAsync();
     await a;
-    expect(Object.keys(svc.byId()).sort()).toEqual(TARGETS.map((t) => t.id).sort());
+    // Satellites wait for orbit data (a skeleton meanwhile), so they are not part of this run.
+    expect(Object.keys(svc.byId()).sort()).toEqual(
+      TARGETS.filter((t) => t.kind !== 'satellite')
+        .map((t) => t.id)
+        .sort(),
+    );
     const snapshot = svc.byId();
     await svc.refreshAll(); // everything is fresh: nothing recomputed
     expect(svc.byId()).toBe(snapshot);

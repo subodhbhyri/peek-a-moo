@@ -23,6 +23,9 @@ export const TARGET_FOUND_LINES: Readonly<Record<string, string>> = {
   m45: 'The Pleiades. A young cluster of more than a thousand stars.',
   'galactic-center': "You can't see it — but 4 million suns' worth of black hole is right there.",
   lmc: 'The Large Magellanic Cloud. A whole galaxy, circling ours.',
+  iss: "That's the ISS. Seven people up there, waving.",
+  tiangong: "That's Tiangong. China's space station, one lap every 92 minutes.",
+  hubble: "That's Hubble. Still taking pictures of the universe after more than 30 years.",
 };
 
 export const SUN_SAFETY_BANNER = 'Never look at the Sun — not directly, not through your camera.';
@@ -41,8 +44,28 @@ export function targetFoundLine(id: string): string | null {
   return TARGET_FOUND_LINES[id] ?? null;
 }
 
-/** Corner toast for non-Moon targets: "Found Jupiter in 4.2s" (the Sun gets its article). */
+/** Shown under the toast when a found satellite is in Earth's shadow. */
+export const SATELLITE_SHADOW_NOTE =
+  "It's in Earth's shadow right now — invisible, but right there.";
+/** Shown under the toast when a found satellite is sunlit but the sky is too bright to see it. */
+export const SATELLITE_DAYLIGHT_NOTE = "The sky's too bright to see it — but it's right there.";
+
+/** The "not visible" note for a found satellite, or null when you could really see it. */
+export function satelliteFoundNote(
+  sunlit: boolean,
+  sunAltitudeDeg: number | undefined,
+): string | null {
+  if (!sunlit) return SATELLITE_SHADOW_NOTE;
+  return sunAltitudeDeg !== undefined && sunAltitudeDeg > -6 ? SATELLITE_DAYLIGHT_NOTE : null;
+}
+
+/** Corner toast for non-Moon targets: "Found Jupiter in 4.2s", "Found the ISS in 4.2s". */
 export function targetFoundToast(def: TargetDef, durationMs: number): string {
-  const name = def.kind === 'sun' ? `the ${def.name}` : def.name;
+  const name =
+    def.kind === 'sun'
+      ? `the ${def.name}`
+      : def.kind === 'satellite'
+        ? def.nameInSentence
+        : def.name;
   return `Found ${name} in ${(durationMs / 1000).toFixed(1)}s`;
 }

@@ -178,7 +178,8 @@ describe('computeAvailability: fixed-sky geometry', () => {
   });
 });
 
-describe('computeAvailability: visibility with real skies', () => {
+// Each probe runs a full 48 h scan, so these are slow when the whole suite runs in parallel.
+describe('computeAvailability: visibility with real skies', { timeout: 30_000 }, () => {
   const start = new Date('2026-07-01T00:00:00Z');
 
   it('Sirius up at night is up-visible', () => {

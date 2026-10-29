@@ -191,7 +191,10 @@ export class AlignControl {
   protected readonly canAlign = computed(() => {
     const target = this.engine.target();
     // Never for the Sun: aligning would mean looking at it.
-    if (this.selection.selected().kind === 'sun') return false;
+    const kind = this.selection.selected().kind;
+    if (kind === 'sun') return false;
+    // Nor for satellites: they move too fast to line up against.
+    if (kind === 'satellite') return false;
     return this.orientation.status() === 'active' && target !== null && target.altitudeDeg > 0;
   });
 

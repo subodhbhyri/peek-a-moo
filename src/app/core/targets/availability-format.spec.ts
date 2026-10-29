@@ -206,3 +206,102 @@ describe('introNote', () => {
     expect(note(below(null, { neverUp: true }), 'mars')).toBe('Mars is not up in the next 2 days.');
   });
 });
+
+describe('satellite labels', () => {
+  const pass = (startMs: number, maxElevationDeg = 63.4, visible = true) => ({
+    start: after(startMs),
+    end: after(startMs + 6 * M),
+    maxElevationDeg,
+    maxAt: after(startMs + 3 * M),
+    visible,
+    ongoing: false,
+  });
+  const sat = (over: Partial<Availability> = {}) =>
+    make({
+      targetId: 'iss',
+      magnitude: -3.5,
+      visibility: 'below-horizon',
+      altitudeDeg: -30,
+      currentPass: null,
+      nextVisiblePass: null,
+      visibleNow: false,
+      orbitAgeDays: 0.5,
+      orbitStale: false,
+      ...over,
+    });
+  const label = (a: Availability) => fmt(a, 'iss');
+
+  it('overhead now and visible: "Overhead now — look fast" (good)', () => {
+    const current = { ...pass(-2 * M), ongoing: true };
+    expect(label(sat({ currentPass: current, visibleNow: true }))).toEqual({
+      label: 'Overhead now — look fast',
+      tone: 'good',
+    });
+  });
+
+  it('overhead now but daylight or shadow: "Overhead now, but not visible" (meh)', () => {
+    const current = { ...pass(-2 * M, 70, false), ongoing: true };
+    expect(label(sat({ currentPass: current, visibleNow: false }))).toEqual({
+      label: 'Overhead now, but not visible',
+      tone: 'meh',
+    });
+  });
+
+  it('next visible pass under 12 h: "Visible pass in 2h 14m · 63° high" (meh)', () => {
+    expect(label(sat({ nextVisiblePass: pass(2 * H + 14 * M + 5_000) }))).toEqual({
+      label: 'Visible pass in 2h 14m · 63° high',
+      tone: 'meh',
+    });
+  });
+
+  it('a later visible pass: "Visible pass tomorrow 6:12 AM" (off)', () => {
+    // 2026-10-27 06:12 in Denver (MDT) = 12:12Z; NOW is Monday 08:00 Denver, so 22 h away, tomorrow.
+    const start = new Date('2026-10-27T12:12:00Z').getTime() - NOW.getTime();
+    expect(label(sat({ nextVisiblePass: pass(start) }))).toEqual({
+      label: 'Visible pass tomorrow 6:12 AM',
+      tone: 'off',
+    });
+  });
+
+  it('no visible pass in 24 h: "No visible passes today" (off)', () => {
+    expect(label(sat())).toEqual({ label: 'No visible passes today', tone: 'off' });
+  });
+
+  it('stale orbit data says so and downgrades the tone one step', () => {
+    const stale = { orbitStale: true, orbitAgeDays: 16.4 };
+    expect(
+      label(sat({ ...stale, currentPass: { ...pass(-M), ongoing: true }, visibleNow: true })),
+    ).toEqual({
+      label: 'Overhead now — look fast · orbit data is 16 days old',
+      tone: 'meh',
+    });
+    expect(label(sat({ ...stale, nextVisiblePass: pass(3 * H) }))).toEqual({
+      label: 'Visible pass in 3h · 63° high · orbit data is 16 days old',
+      tone: 'off',
+    });
+    expect(label(sat({ ...stale }))).toEqual({
+      label: 'No visible passes today · orbit data is 16 days old',
+      tone: 'off',
+    });
+  });
+
+  it('no orbit data at all: "Orbit data unavailable"', () => {
+    expect(label(sat({ orbitDataUnavailable: true }))).toEqual({
+      label: 'Orbit data unavailable',
+      tone: 'off',
+    });
+  });
+
+  it('intro: the pass label, plus "you can still find it" when there is no visible pass', () => {
+    const n = (a: Availability) => introNote(a, getTarget('iss')!, NOW, LOCALE, TZ);
+    expect(n(sat({ nextVisiblePass: pass(2 * H + 14 * M + 5_000) }))).toBe(
+      'Visible pass in 2h 14m · 63° high.',
+    );
+    expect(n(sat())).toBe(
+      'No visible passes today. You can still find where it is right now — even in daylight.',
+    );
+    expect(n(sat({ orbitDataUnavailable: true }))).toBe(
+      'Orbit data unavailable. Check your connection and try again.',
+    );
+  });
+});

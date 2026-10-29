@@ -25,6 +25,8 @@ export interface DebugReportInput {
   pointing: { az: number; alt: number; roll: number } | null;
   targetId: string;
   target: { id: string; az: number; alt: number } | null;
+  /** Satellites only. */
+  satellite?: { noradId: number; ageDays: number; sunlit: boolean; rangeKm: number } | null;
   appVersion: string;
 }
 
@@ -71,6 +73,14 @@ export function buildDebugReport(i: DebugReportInput): Record<string, unknown> {
     targetId: i.targetId,
     target: m && { id: m.id, az: round(m.az, 2), alt: round(m.alt, 2) },
     delta: p && m && { az: round(wrap180(m.az - p.az), 2), alt: round(m.alt - p.alt, 2) },
+    ...(i.satellite && {
+      satellite: {
+        noradId: i.satellite.noradId,
+        elementAgeDays: round(i.satellite.ageDays, 2),
+        sunlit: i.satellite.sunlit,
+        rangeKm: round(i.satellite.rangeKm, 1),
+      },
+    }),
     appVersion: i.appVersion,
   };
 }

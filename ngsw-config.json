@@ -24,5 +24,17 @@
         "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "gp",
+      "urls": ["/api/gp"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 3,
+        "maxAge": "2h",
+        "timeout": "5s"
+      }
+    }
   ]
 }

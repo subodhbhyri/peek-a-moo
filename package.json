@@ -10,8 +10,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "format": "prettier --write \"src/**/*.{ts,html,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css}\""
+    "format": "prettier --write \"src/**/*.{ts,html,css}\" \"api/**/*.ts\" \"scripts/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css}\" \"api/**/*.ts\" \"scripts/*.mjs\"",
+    "gp:refresh": "node scripts/gp-refresh.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.7",
@@ -30,6 +31,7 @@
     "astronomy-engine": "^2.1.19",
     "geomagnetism": "^0.2.0",
     "rxjs": "~7.8.0",
+    "satellite.js": "^7.1.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

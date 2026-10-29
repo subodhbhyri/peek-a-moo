@@ -5,6 +5,7 @@ import {
   SUN_SAFETY_BANNER,
   TARGET_FOUND_LINES,
   isNotNakedEye,
+  satelliteFoundNote,
   targetFoundLine,
   targetFoundToast,
 } from './target-lines';
@@ -56,5 +57,25 @@ describe('target found lines', () => {
     );
     expect(flagged).toEqual(['galactic-center']);
     expect(NOT_VISIBLE_NOTE).toBe("Not visible to the eye — it's there, behind dust.");
+  });
+});
+
+describe('satellite found moment', () => {
+  it('uses the sentence name in the toast and has a line per satellite', () => {
+    expect(targetFoundToast(getTarget('iss')!, 4234)).toBe('Found the ISS in 4.2s');
+    expect(targetFoundToast(getTarget('tiangong')!, 4234)).toBe('Found Tiangong in 4.2s');
+    expect(targetFoundToast(getTarget('hubble')!, 4234)).toBe('Found Hubble in 4.2s');
+    expect(targetFoundLine('iss')).toBe("That's the ISS. Seven people up there, waving.");
+  });
+
+  it("in Earth's shadow it says so; in daylight it says the sky is too bright; otherwise nothing", () => {
+    expect(satelliteFoundNote(false, -30)).toBe(
+      "It's in Earth's shadow right now — invisible, but right there.",
+    );
+    expect(satelliteFoundNote(true, 20)).toBe(
+      "The sky's too bright to see it — but it's right there.",
+    );
+    expect(satelliteFoundNote(true, -20)).toBeNull();
+    expect(satelliteFoundNote(true, undefined)).toBeNull();
   });
 });

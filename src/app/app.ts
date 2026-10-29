@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { City } from './core/data/cities';
+import { GpService } from './core/gp/gp.service';
 import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
 import { AvailabilityService } from './core/targets/availability.service';
 import { introNote } from './core/targets/availability-format';
@@ -56,6 +57,7 @@ export class App {
   private readonly cameraFov = inject(CameraFovService);
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
+  private readonly gp = inject(GpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
 
@@ -82,6 +84,14 @@ export class App {
     const def = this.selection.selected();
     const a = this.availability.byId()[def.id];
     return a ? introNote(a, def, new Date(), navigator.language || 'en-US') : null;
+  });
+  /** A satellite is selected but there is no usable orbit data (yet): say so instead of showing nothing. */
+  protected readonly orbitStatus = computed<'loading' | 'unavailable' | null>(() => {
+    if (this.selection.selected().kind !== 'satellite') return null;
+    if (this.gp.status() === 'unavailable' || this.engine.targetError() === 'propagation-failed') {
+      return 'unavailable';
+    }
+    return this.engine.target() === null && this.gp.status() === 'loading' ? 'loading' : null;
   });
   protected readonly sunBanner = SUN_SAFETY_BANNER;
   protected readonly sunCameraNote = SUN_CAMERA_NOTE;
@@ -122,6 +132,14 @@ export class App {
       untracked(() => {
         this.moonSeen.set(false);
         this.availability.ensure(def);
+      });
+    });
+    // A satellite's availability needs its orbit data: compute it when that arrives.
+    effect(() => {
+      this.gp.stamp();
+      const def = this.selection.selected();
+      untracked(() => {
+        if (def.kind === 'satellite') this.availability.ensure(def);
       });
     });
 

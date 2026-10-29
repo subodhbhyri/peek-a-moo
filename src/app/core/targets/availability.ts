@@ -1,6 +1,9 @@
 import type { GeoPosition } from '../astro/ephemeris';
+import type { SatelliteElements } from '../gp/gp.types';
 import { getTarget } from './catalog';
 import { computeTargetState } from './compute';
+import { type Crossings, type ScanOptions, scanCrossings } from './crossings';
+import { type SatellitePass, computeSatelliteAvailability } from './satellite-passes';
 import type { TargetDef } from './target.types';
 
 export type Visibility =
@@ -30,6 +33,18 @@ export interface Availability {
   neverUp: boolean;
   /** Fixed targets only: geometrically impossible at this latitude. */
   neverRisesHere: boolean;
+  /** Satellites only (Phase 6). Their orbit data could not be loaded: nothing else here is meaningful. */
+  orbitDataUnavailable?: boolean;
+  /** Satellites: the pass in progress (above 10 degrees now), if any. */
+  currentPass?: SatellitePass | null;
+  /** Satellites: the next pass that is sunlit, above 10 degrees and in a dark enough sky (within 24 h). */
+  nextVisiblePass?: SatellitePass | null;
+  /** Satellites: overhead now and actually visible (sunlit, dark enough sky). */
+  visibleNow?: boolean;
+  /** Satellites: age of the element set, days. */
+  orbitAgeDays?: number;
+  /** Satellites: older than 14 days. */
+  orbitStale?: boolean;
 }
 
 /** Naked-eye limiting magnitude by sky darkness, from the Sun's altitude. */
@@ -82,78 +97,14 @@ export function neverRisesAtLatitude(decDeg: number, latitudeDeg: number): boole
   return latitudeDeg >= 0 ? decDeg < -(90 - latitudeDeg) : decDeg > 90 - Math.abs(latitudeDeg);
 }
 
-export interface ScanOptions {
-  /** Sampling step. Default 20 min; Phase 6 passes a smaller one for satellites. */
-  stepMs: number;
-  /** How far ahead to look. Default 48 h. */
-  windowMs: number;
-  /** Bisection resolution for each crossing. Default 30 s. */
-  resolutionMs: number;
-  /** "Up" means altitude above this. Default 0 (apparent horizon). */
-  horizonDeg: number;
-}
-
-export const DEFAULT_SCAN: ScanOptions = {
-  stepMs: 20 * 60_000,
-  windowMs: 48 * 3_600_000,
-  resolutionMs: 30_000,
-  horizonDeg: 0,
-};
-
-export interface Crossings {
-  rises: Date[];
-  sets: Date[];
-  /** Up at every sample (and so at the start). */
-  alwaysUp: boolean;
-  /** Down at every sample. */
-  neverUp: boolean;
-}
-
-/**
- * Generic horizon-crossing search for any altitude function: sample every `stepMs` over `windowMs`,
- * then bisect each sign change down to `resolutionMs`. No per-kind special cases.
- */
-export function scanCrossings(
-  altitudeAt: (d: Date) => number,
-  from: Date,
-  opts: Partial<ScanOptions> = {},
-): Crossings {
-  const o = { ...DEFAULT_SCAN, ...opts };
-  const isUp = (ms: number) => altitudeAt(new Date(ms)) > o.horizonDeg;
-  const start = from.getTime();
-  const steps = Math.ceil(o.windowMs / o.stepMs);
-  const rises: Date[] = [];
-  const sets: Date[] = [];
-  let prevMs = start;
-  let prevUp = isUp(start);
-  let anyUp = prevUp;
-  let anyDown = !prevUp;
-
-  for (let i = 1; i <= steps; i++) {
-    const ms = Math.min(start + i * o.stepMs, start + o.windowMs);
-    const up = isUp(ms);
-    if (up) anyUp = true;
-    else anyDown = true;
-    if (up !== prevUp) {
-      // Narrow [lo, hi] until it is within the resolution; hi is on the new side.
-      let lo = prevMs;
-      let hi = ms;
-      while (hi - lo > o.resolutionMs) {
-        const mid = Math.floor((lo + hi) / 2);
-        if (isUp(mid) === up) hi = mid;
-        else lo = mid;
-      }
-      (up ? rises : sets).push(new Date(hi));
-    }
-    prevMs = ms;
-    prevUp = up;
-  }
-  return { rises, sets, alwaysUp: !anyDown, neverUp: !anyUp };
-}
+export { DEFAULT_SCAN, scanCrossings } from './crossings';
+export type { Crossings, ScanOptions } from './crossings';
 
 export interface AvailabilityOptions {
   limits?: SkyLimits;
   scan?: Partial<ScanOptions>;
+  /** Orbital elements, needed for satellite targets. */
+  elements?: SatelliteElements;
 }
 
 /** Availability of one target at `now` from `pos`. Pure: no clocks, no Angular. */
@@ -163,6 +114,9 @@ export function computeAvailability(
   pos: GeoPosition,
   opts: AvailabilityOptions = {},
 ): Availability {
+  if (def.kind === 'satellite') {
+    return computeSatelliteAvailability(def, now, pos, opts.elements, opts.scan);
+  }
   const state = computeTargetState(def, now, pos);
   const sunDef = getTarget('sun');
   const sunAlt =
