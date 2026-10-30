@@ -15,6 +15,8 @@ Pick something in the sky, then move your phone until it slides into view from t
 | Deep sky | Andromeda, the Orion Nebula, the Pleiades, the Galactic Center, the Large Magellanic Cloud |
 | Satellites | the ISS, Tiangong, Hubble, with their next visible pass |
 
+Tap the ⓘ on any row (or on the found toast) for a short description, three facts and live numbers (distance, light travel time, height and speed for satellites). **Look Around** shows every target at once, named, as you sweep the phone across the sky: a horizon line with N/E/S/W, names that never overlap, and targets below the ground faded and dashed. Tap a name for its card.
+
 The picker shows live status for each ("Up now", "Rises in 3h 12m", "Visible pass in 2h 14m · 63° high", "Never rises from here") and a "Best right now" row. Everything except the satellites works offline.
 
 ## How it works
@@ -70,7 +72,7 @@ Phones need HTTPS for motion sensors, so test on a deployed preview (see below),
 
 **Satellite data.** `ng serve` does not run Vercel functions, so locally the app uses the bundled snapshot `public/data/gp-fallback.json`. To try the real endpoint, run `npx vercel dev`. `npm run gp:refresh` rewrites the snapshot (a weekly GitHub Action does too). CelesTrak asks clients to fetch at most once per update; our function caches for 2 hours and never retries.
 
-**Share links.** `?target=<id>` opens straight into a target, e.g. `/?target=jupiter`.
+**Share links.** `?target=<id>` opens straight into a target, e.g. `/?target=jupiter`; `?mode=look` opens Look Around.
 
 ## Credits
 

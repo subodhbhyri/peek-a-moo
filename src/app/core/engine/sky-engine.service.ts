@@ -2,6 +2,8 @@ import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angu
 import { Subject } from 'rxjs';
 import { magneticDeclinationDeg } from '../astro/declination';
 import { GpService } from '../gp/gp.service';
+import { TARGETS } from '../targets/catalog';
+import { CameraBasis } from '../sensors/orientation-math';
 import {
   ScreenProjection,
   Viewport,
@@ -49,6 +51,49 @@ export interface SkyFrame {
   lastFindDurationMs: number | null;
 }
 
+/** 'find': look for the selected target. 'look': Look Around, every target at once, no finding. */
+export type EngineMode = 'find' | 'look';
+
+/** One target in a Look Around frame. */
+export interface LookItem {
+  def: TargetDef;
+  state: TargetState;
+  projection: ScreenProjection;
+  aboveHorizon: boolean;
+}
+
+/** Everything the Look Around renderer needs for one animation frame. */
+export interface LookFrame {
+  viewport: Viewport;
+  basis: CameraBasis;
+  items: LookItem[];
+}
+
+const MODE_STORAGE_KEY = 'ptm.mode';
+/** Sun within this many degrees of the screen center shows the Sun safety banner in Look Around. */
+export const SUN_NEAR_CENTER_DEG = 30;
+
+/**
+ * Initial mode, in priority order: `?mode=look`; then, unless the URL names a `?target=` (that stays find
+ * mode), a remembered look mode; else find.
+ */
+function initialMode(): { mode: EngineMode; source: 'link' | 'restored' | null } {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'look') return { mode: 'look', source: 'link' };
+    if (params.has('target')) return { mode: 'find', source: null };
+  } catch {
+    // fall through
+  }
+  try {
+    if (localStorage.getItem(MODE_STORAGE_KEY) === 'look')
+      return { mode: 'look', source: 'restored' };
+  } catch {
+    // fall through
+  }
+  return { mode: 'find', source: null };
+}
+
 /** A tracker event, tagged with the target it happened for. */
 export type TargetFindEvent = FindEvent & { targetId: string };
 
@@ -74,6 +119,14 @@ export class SkyEngineService {
   /** found / lost events. The personality + stats layer subscribes to this. */
   readonly events$ = new Subject<TargetFindEvent>();
 
+  private readonly initial = initialMode();
+  /** Find (default) or Look Around. In look mode the tracker is paused: no found events, stats or lines. */
+  readonly mode = signal<EngineMode>(this.initial.mode);
+  /** How look mode was entered at startup: a `?mode=look` link or a remembered choice (null: not at startup). */
+  readonly initialLookSource: 'link' | 'restored' | null = this.initial.source;
+  /** Look Around: the Sun is within SUN_NEAR_CENTER_DEG of the screen center. */
+  readonly lookSunNearCenter = signal(false);
+
   /** True while the user is lining up the real target (align mode): no find tracking, events or stats. */
   readonly trackerPaused = signal(false);
 
@@ -83,6 +136,8 @@ export class SkyEngineService {
   /** Satellites are recomputed every frame; the signal above only follows about once a second. */
   private live: TargetState | null = null;
   private lastSignalMs = -Infinity;
+  private readonly lookStates = new Map<string, TargetState>();
+  private readonly lookComputedAt = new Map<string, number>();
 
   constructor() {
     effect(() => {
@@ -109,7 +164,83 @@ export class SkyEngineService {
         if (interval > 0) this.intervalId = setInterval(() => this.recompute(), interval);
       });
     });
+    if (this.mode() === 'look') this.enterLook();
     inject(DestroyRef).onDestroy(() => this.clearTimer());
+  }
+
+  /**
+   * Switch between find and Look Around. Look mode pauses the tracker through the same path align mode
+   * uses, so nothing is found, counted or said; going back starts a fresh search. Persists the choice
+   * (localStorage, and `?mode=look` in the URL).
+   */
+  setMode(mode: EngineMode): void {
+    if (this.mode() === mode) return;
+    this.mode.set(mode);
+    try {
+      localStorage.setItem(MODE_STORAGE_KEY, mode);
+    } catch {
+      // storage unavailable: the mode still applies this session
+    }
+    try {
+      const url = new URL(window.location.href);
+      if (mode === 'look') url.searchParams.set('mode', 'look');
+      else url.searchParams.delete('mode');
+      history.replaceState(history.state, '', url);
+    } catch {
+      // no usable history API
+    }
+    if (mode === 'look') this.enterLook();
+    else {
+      this.lookSunNearCenter.set(false);
+      this.setTrackerPaused(false);
+    }
+  }
+
+  private enterLook(): void {
+    this.setTrackerPaused(true);
+    this.lookStates.clear();
+    this.lookComputedAt.clear();
+    // A user action, so fetching orbit data is allowed; until it arrives satellites are simply absent.
+    void this.gp.get();
+  }
+
+  /**
+   * Look Around frame: every catalog target projected with the current camera. Recomputes each target on
+   * its own cadence (satellites every frame, the Moon every 5 s, everything else every 30 s). null until
+   * there is a location and a camera basis.
+   */
+  tickLook(now: number, viewport: Viewport): LookFrame | null {
+    const basis = this.orientation.basis();
+    const pos = this.location.position();
+    if (!basis || !pos) return null;
+    const elements = this.gp.elements() ?? undefined;
+    const date = new Date();
+    const items: LookItem[] = [];
+    let sunNear = false;
+    for (const def of TARGETS) {
+      const interval = recomputeIntervalMs(def.kind);
+      const last = this.lookComputedAt.get(def.id);
+      if (last === undefined || interval === 0 || now - last >= interval) {
+        this.lookComputedAt.set(def.id, now);
+        if (def.kind === 'satellite' && !elements) {
+          this.lookStates.delete(def.id);
+        } else {
+          try {
+            this.lookStates.set(def.id, computeTargetState(def, date, pos, elements));
+          } catch (e) {
+            if (!(e instanceof SatelliteDataError)) throw e;
+            this.lookStates.delete(def.id);
+          }
+        }
+      }
+      const state = this.lookStates.get(def.id);
+      if (!state) continue;
+      const projection = projectDirection(state.direction, basis, viewport, 0);
+      if (def.kind === 'sun') sunNear = projection.angularDistanceDeg < SUN_NEAR_CENTER_DEG;
+      items.push({ def, state, projection, aboveHorizon: state.altitudeDeg > 0 });
+    }
+    if (sunNear !== this.lookSunNearCenter()) this.lookSunNearCenter.set(sunNear);
+    return { viewport, basis, items };
   }
 
   /**

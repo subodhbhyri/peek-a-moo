@@ -1,9 +1,10 @@
 import type { TargetDef } from './target.types';
+import { TARGET_INFO } from './target-info-content';
 
 export const DEFAULT_TARGET_ID = 'moon';
 
 /** Curated catalog. Later phases add entries without touching the engine. */
-export const TARGETS: readonly TargetDef[] = [
+const BASE_TARGETS: readonly Omit<TargetDef, 'info'>[] = [
   {
     id: 'moon',
     name: 'Moon',
@@ -293,6 +294,12 @@ export const TARGETS: readonly TargetDef[] = [
     satellite: { noradId: 20580, magnitude: 1.5 },
   },
 ];
+
+/** The catalog: the entries above, each with its info card content. */
+export const TARGETS: readonly TargetDef[] = BASE_TARGETS.map((t) => ({
+  ...t,
+  info: TARGET_INFO[t.id],
+}));
 
 export function getTarget(id: string): TargetDef | undefined {
   return TARGETS.find((t) => t.id === id);

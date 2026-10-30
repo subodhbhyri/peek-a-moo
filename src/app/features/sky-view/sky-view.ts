@@ -31,7 +31,10 @@ import { SkyEngineService, SkyFrame } from '../../core/engine/sky-engine.service
 import { LookAngles, dragToLook, keyToLook } from '../../core/sensors/drag-look';
 import { OrientationService } from '../../core/sensors/orientation.service';
 import { Viewport, edgeGlowPoint } from '../../core/projection/projection';
+import { LookHit, drawLook, hitTest } from '../../core/render/draw-look';
 import { drawTarget } from '../../core/render/draw-target';
+import { TargetInfoService } from '../target-info/target-info.service';
+import { getTarget } from '../../core/targets/catalog';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { CornerStat } from '../corner-stat/corner-stat';
 import { MoonFace } from '../moon-face/moon-face';
@@ -63,6 +66,9 @@ const MOVING_GLOW_RAMP_MS = 600;
       (pointerdown)="onPointerDown($event)"
     ></canvas>
     <div #glow class="edge-glow"></div>
+    @if (lookNames(); as names) {
+      <p class="sr-only" role="status" aria-live="polite">{{ names }}</p>
+    }
     <app-moon-face #face />
     @if (foundLine(); as line) {
       <p class="found-line" role="status">{{ line }}</p>
@@ -79,6 +85,17 @@ const MOVING_GLOW_RAMP_MS = 600;
       width: 100%;
       height: 100%;
       display: block;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
     }
     .found-line {
       position: absolute;
@@ -117,6 +134,7 @@ export class SkyView implements AfterViewInit {
   private readonly analytics = inject(AnalyticsService);
   private readonly alignment = inject(AlignmentService);
   private readonly availability = inject(AvailabilityService);
+  private readonly info = inject(TargetInfoService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -130,6 +148,11 @@ export class SkyView implements AfterViewInit {
   /** Short line for non-Moon targets (the Moon has the face and its speech bubble). */
   protected readonly foundLine = signal<string | null>(null);
   private foundLineTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Look Around: what a tap can hit, from the last drawn frame. */
+  private lookHits: LookHit[] = [];
+  private lookNamesAt = -Infinity;
+  /** Look Around, for screen readers: the names currently on screen (updated at most every 2 s). */
+  protected readonly lookNames = signal<string | null>(null);
   private announcedVisible = false;
   private lastTargetId: string | null = null;
   private rafId = 0;
@@ -176,7 +199,11 @@ export class SkyView implements AfterViewInit {
 
     const loop = (t: number) => {
       this.syncVerticalFov();
-      this.draw(canvas, this.engine.tick(t, this.viewport));
+      if (this.engine.mode() === 'look') this.drawLookAround(canvas, t);
+      else {
+        if (this.lookNames() !== null) this.lookNames.set(null);
+        this.draw(canvas, this.engine.tick(t, this.viewport));
+      }
       this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);
@@ -198,6 +225,16 @@ export class SkyView implements AfterViewInit {
   }
 
   protected onPointerDown(e: PointerEvent): void {
+    if (this.engine.mode() === 'look') {
+      // A tap on a marker or its name opens that target's info card, and does not start a drag.
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const id = hitTest(this.lookHits, e.clientX - rect.left, e.clientY - rect.top);
+      const def = id ? getTarget(id) : undefined;
+      if (def) {
+        this.info.open(def, 'look-around');
+        return;
+      }
+    }
     if (!this.shouldUseDragMode()) return;
     this.dragging = true;
     this.lastPointer = { x: e.clientX, y: e.clientY };
@@ -339,6 +376,35 @@ export class SkyView implements AfterViewInit {
     if (v === this.viewport.vFovDeg) return;
     this.viewport = { width, height, vFovDeg: v };
     this.cameraFov.vFovInUseDeg.set(v);
+  }
+
+  /** Look Around: every target at once, named. No tracker, no found moment, no edge glow. */
+  private drawLookAround(canvas: HTMLCanvasElement, now: number): void {
+    const ctx = canvas.getContext('2d');
+    this.faceRef().update(0, 0, 0, false);
+    this.glowRef().nativeElement.style.opacity = '0';
+    if (this.foundLine()) this.clearFoundLine();
+    this.lastTargetId = null;
+    if (!ctx) return;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, this.viewport.width, this.viewport.height);
+    const frame = this.engine.tickLook(now, this.viewport);
+    if (!frame) {
+      this.lookHits = [];
+      return;
+    }
+    const result = drawLook(ctx, frame);
+    this.lookHits = result.hits;
+    if (now - this.lookNamesAt >= 2000) {
+      this.lookNamesAt = now;
+      const text = result.onScreen.length
+        ? 'On screen: ' +
+          result.onScreen
+            .map((o) => (o.aboveHorizon ? o.name : `${o.name} (below the horizon)`))
+            .join(', ')
+        : null;
+      if (text !== this.lookNames()) this.lookNames.set(text);
+    }
   }
 
   private draw(canvas: HTMLCanvasElement, frame: SkyFrame | null): void {

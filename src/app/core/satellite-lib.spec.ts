@@ -11,6 +11,7 @@ describe('satellite-lib: every re-export resolves', () => {
     'degreesToRadians',
     'ecfToLookAngles',
     'eciToEcf',
+    'eciToGeodetic',
     'geodeticToEcf',
   ] as const)('%s is a function', (name) => {
     expect(typeof lib[name]).toBe('function');

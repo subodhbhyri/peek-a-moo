@@ -378,6 +378,13 @@ const EXPECTED: Record<string, unknown> = {
 };
 
 describe('SkyEngine characterization (v1 Moon behaviour)', () => {
+  // Start every test from a clean slate: a remembered Look Around mode (ptm.mode) or ?mode=look left behind
+  // by another spec in the same worker would start the engine paused and nothing would ever be found.
+  beforeEach(() => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
+  });
+
   for (const c of CASES) {
     it(c.name, () => {
       const got = observe(c);

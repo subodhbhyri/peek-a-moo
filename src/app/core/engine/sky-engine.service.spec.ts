@@ -8,6 +8,13 @@ import { SkyEngineService } from './sky-engine.service';
 const viewport: Viewport = { width: 400, height: 800, vFovDeg: 62 };
 
 describe('SkyEngineService: tracker pause (align mode)', () => {
+  // Start every test from a clean slate: a remembered Look Around mode (ptm.mode) or ?mode=look left behind
+  // by another spec in the same worker would start the engine paused and nothing would ever be found.
+  beforeEach(() => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
+  });
+
   function setup() {
     TestBed.inject(LocationService).setManual({ latitude: 40, longitude: -75 });
     const engine = TestBed.inject(SkyEngineService);

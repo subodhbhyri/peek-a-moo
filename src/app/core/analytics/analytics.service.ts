@@ -2,11 +2,13 @@ import { Injectable, InjectionToken, inject } from '@angular/core';
 import { track } from '@vercel/analytics';
 import type { Visibility } from '../targets/availability';
 
-export type SelectionSource = 'picker' | 'best-now' | 'link' | 'default';
+export type SelectionSource = 'picker' | 'best-now' | 'link' | 'default' | 'info';
 export type SecondsBucket = '<3' | '3-10' | '10-30' | '30+';
 export type CorrectionBucket = '<5' | '5-15' | '15-45' | '45+';
 export type SensorMode = 'ios' | 'absolute' | 'drag' | 'no-compass';
 export type ShareMethod = 'native' | 'clipboard';
+export type LookAroundSource = 'picker' | 'link' | 'restored';
+export type InfoSource = 'picker' | 'found' | 'look-around';
 
 /**
  * Every event and EXACTLY the properties it may carry. There is deliberately no free-form property
@@ -25,6 +27,8 @@ export interface AnalyticsEvents {
   alignment_locked: { correction: CorrectionBucket };
   share: { target: string; method: ShareMethod };
   sensor_mode: { mode: SensorMode };
+  look_around_opened: { from: LookAroundSource };
+  target_info_opened: { target: string; from: InfoSource };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;
@@ -91,6 +95,14 @@ export class AnalyticsService {
 
   share(target: string, method: ShareMethod): void {
     this.send('share', { target, method });
+  }
+
+  lookAroundOpened(from: LookAroundSource): void {
+    this.send('look_around_opened', { from });
+  }
+
+  targetInfoOpened(target: string, from: InfoSource): void {
+    this.send('target_info_opened', { target, from });
   }
 
   sensorMode(mode: SensorMode): void {

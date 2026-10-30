@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { AnalyticsService } from '../../core/analytics/analytics.service';
+import { getTarget } from '../../core/targets/catalog';
+import { TargetInfoService } from '../target-info/target-info.service';
 import { shareMessage, shareUrl } from '../../core/targets/share';
 
 const VISIBLE_MS = 5000;
@@ -25,9 +27,22 @@ export interface FindStat {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (payload(); as p) {
-      <button type="button" class="pill" [class.visible]="visible()" (click)="share(p)">
-        {{ copied() ? 'Copied!' : label(p) }}
-      </button>
+      <div class="row">
+        @if (aboutName(p); as name) {
+          <button
+            type="button"
+            class="about"
+            [class.visible]="visible()"
+            [attr.aria-label]="'About ' + name"
+            (click)="about(p)"
+          >
+            <span aria-hidden="true">ⓘ</span>
+          </button>
+        }
+        <button type="button" class="pill" [class.visible]="visible()" (click)="share(p)">
+          {{ copied() ? 'Copied!' : label(p) }}
+        </button>
+      </div>
       @if (p.note) {
         <p class="note" [class.visible]="visible()">{{ p.note }}</p>
       }
@@ -52,6 +67,30 @@ export interface FindStat {
     }
     .note.visible {
       opacity: 0.6;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.4rem;
+    }
+    .about {
+      width: 44px;
+      height: 44px;
+      font: inherit;
+      font-size: 1.1rem;
+      color: #e9e6dc;
+      background: rgba(20, 18, 14, 0.6);
+      border: 1px solid rgba(233, 230, 220, 0.15);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      cursor: pointer;
+    }
+    .about.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
     .pill {
       font: inherit;
@@ -82,6 +121,7 @@ export interface FindStat {
 })
 export class CornerStat {
   private readonly analytics = inject(AnalyticsService);
+  private readonly info = inject(TargetInfoService);
   protected readonly payload = signal<FindStat | null>(null);
   protected readonly visible = signal(false);
   protected readonly copied = signal(false);
@@ -93,6 +133,16 @@ export class CornerStat {
     this.visible.set(true);
     if (this.hideTimer) clearTimeout(this.hideTimer);
     this.hideTimer = setTimeout(() => this.visible.set(false), VISIBLE_MS);
+  }
+
+  /** The target's name for the (i) button's label; null when the toast has no known target. */
+  protected aboutName(p: FindStat): string | null {
+    return (p.targetId && getTarget(p.targetId)?.name) || null;
+  }
+
+  protected about(p: FindStat): void {
+    const def = p.targetId ? getTarget(p.targetId) : undefined;
+    if (def) this.info.open(def, 'found');
   }
 
   protected label(p: FindStat): string {

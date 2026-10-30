@@ -198,6 +198,8 @@ export class AlignControl {
     if (kind === 'sun') return false;
     // Nor for satellites: they move too fast to line up against.
     if (kind === 'satellite') return false;
+    // Nor in Look Around: nothing is being looked for.
+    if (this.engine.mode() === 'look') return false;
     return this.orientation.status() === 'active' && target !== null && target.altitudeDeg > 0;
   });
 

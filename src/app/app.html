@@ -13,13 +13,22 @@
   <button
     type="button"
     class="target-chip"
-    [class.below-banner]="isSun()"
+    [class.below-banner]="showSunBanner()"
     aria-haspopup="dialog"
-    [attr.aria-label]="'Target: ' + selectedDef().name + '. Change target'"
+    [attr.aria-label]="
+      lookMode()
+        ? 'Look Around. Change target'
+        : 'Target: ' + selectedDef().name + '. Change target'
+    "
     (click)="openPicker()"
   >
-    <span aria-hidden="true">{{ glyph(selectedDef()) }}</span>
-    {{ selectedDef().shortName }} ▾
+    @if (lookMode()) {
+      <span aria-hidden="true">◎</span>
+      Look Around ▾
+    } @else {
+      <span aria-hidden="true">{{ glyph(selectedDef()) }}</span>
+      {{ selectedDef().shortName }} ▾
+    }
   </button>
 }
 @if (orbitStatus(); as status) {
@@ -27,7 +36,14 @@
     {{ status === 'loading' ? 'Getting orbit data…' : 'Orbit data unavailable' }}
   </p>
 }
-<app-target-picker [open]="pickerOpen()" (closed)="pickerOpen.set(false)" />
+<app-target-picker
+  [open]="pickerOpen()"
+  [lookActive]="lookMode()"
+  (closed)="pickerOpen.set(false)"
+  (lookAroundChosen)="engine.setMode('look')"
+  (targetChosen)="engine.setMode('find')"
+/>
+<app-target-info (findIt)="findFromInfo($event)" />
 <app-align-control />
 <app-camera-settings />
 
@@ -103,14 +119,14 @@
   </div>
 }
 
-@if (isSun()) {
+@if (showSunBanner()) {
   <div class="sun-banner" role="alert">{{ sunBanner }}</div>
 }
 
 <button
   type="button"
   class="corner-control camera-toggle"
-  [class.below-banner]="isSun()"
+  [class.below-banner]="showSunBanner()"
   [class.disabled]="isSun()"
   (click)="toggleCamera()"
   aria-label="Camera background"

@@ -5,6 +5,18 @@ export type TargetKind = 'moon' | 'sun' | 'planet' | 'fixed' | 'satellite';
 export type TargetCategory = 'solar-system' | 'stars' | 'deep-sky' | 'satellites';
 export type RenderStyle = 'moon' | 'planet' | 'sun' | 'star' | 'extended' | 'satellite';
 
+/** Info card content (Phase 8). Facts that do not go stale; see target-info-content.ts. */
+export interface TargetInfo {
+  /** "Gas giant planet", "Red supergiant star", "Spiral galaxy", "Space station". */
+  type: string;
+  /** 1-2 sentences, plain language, at most 220 characters. */
+  description: string;
+  /** Exactly three, each at most 120 characters. */
+  facts: readonly string[];
+  /** Fixed-sky targets only: distance in light-years (shown with "about"). */
+  distanceLy?: number;
+}
+
 /** Static catalog entry. See ARCHITECTURE §5.1. */
 export interface TargetDef {
   /** URL-safe, stable (used in ?target= and stats). */
@@ -19,6 +31,7 @@ export interface TargetDef {
   /** One line for the picker. */
   blurb: string;
   render: RenderStyle;
+  info: TargetInfo;
   /** J2000 (ICRS) coordinates for fixed-sky targets. */
   fixed?: {
     raHours: number;

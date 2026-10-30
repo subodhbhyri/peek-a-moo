@@ -38,11 +38,12 @@ src/app/core/
   satellite-lib.ts           the few satellite.js functions we use, imported from its dist/ files
   engine/sky-engine.service  glue: selection + location + orientation + provider + projection + find tracker
   tracking/find-tracker.ts   searching -> visible -> found -> lost state machine
-  render/                    one drawer per render style (moon, planet, sun, star, extended, satellite)
+  render/                    one drawer per render style (moon, planet, sun, star, extended, satellite);
+                             draw-look + label-layout (Look Around: every target named, no overlaps)
   personality/               find-lines (tagged selector), lines/<id>.ts packs, target-lines (toasts, notes), stats
   analytics/                 AnalyticsService: typed anonymous events, no location, none under ?debug
   debug/                     debug-report
-features/                    sky-view, moon-face, corner-stat, target-picker, align-control, camera-settings,
+features/                    target-info (info card), sky-view, moon-face, corner-stat, target-picker, align-control, camera-settings,
                              city-picker, debug-overlay
 ```
 

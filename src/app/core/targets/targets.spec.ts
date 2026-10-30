@@ -81,6 +81,7 @@ describe('computeTargetState', () => {
       category: 'satellites',
       blurb: '',
       render: 'satellite',
+      info: { type: '', description: '', facts: [] },
       satellite: { noradId: 25544, magnitude: -3.5 },
     };
     expect(() => computeTargetState(iss, new Date(), POS)).toThrow(/No provider.*iss/);

@@ -11,6 +11,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { City } from './core/data/cities';
+import { TargetInfo } from './features/target-info/target-info';
+import { TargetInfoService } from './features/target-info/target-info.service';
+import type { TargetDef } from './core/targets/target.types';
 import { AnalyticsService, SensorMode } from './core/analytics/analytics.service';
 import { GpService } from './core/gp/gp.service';
 import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
@@ -44,7 +47,15 @@ type Gate = 'needs-tap' | 'starting' | 'running' | 'motion-denied';
 
 @Component({
   selector: 'app-root',
-  imports: [SkyView, DebugOverlay, CityPicker, AlignControl, CameraSettings, TargetPicker],
+  imports: [
+    SkyView,
+    DebugOverlay,
+    CityPicker,
+    AlignControl,
+    CameraSettings,
+    TargetPicker,
+    TargetInfo,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -53,13 +64,14 @@ type Gate = 'needs-tap' | 'starting' | 'running' | 'motion-denied';
 export class App {
   private readonly location = inject(LocationService);
   private readonly orientation = inject(OrientationService);
-  private readonly engine = inject(SkyEngineService);
+  protected readonly engine = inject(SkyEngineService);
   private readonly wakeLock = inject(WakeLockService);
   private readonly cameraFov = inject(CameraFovService);
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
   private readonly gp = inject(GpService);
   private readonly analytics = inject(AnalyticsService);
+  private readonly info = inject(TargetInfoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
 
@@ -77,7 +89,14 @@ export class App {
   /** 'flat' | 'stuck' (still not calibrated after 8 s) | 'raise' (calibrated, shown for 1.5 s) | null */
   protected readonly calibrationBanner = signal<'flat' | 'stuck' | 'raise' | null>(null);
   /** Sun safety: banner on, camera off, alignment off. */
-  protected readonly isSun = computed(() => this.selection.selected().kind === 'sun');
+  protected readonly lookMode = computed(() => this.engine.mode() === 'look');
+  protected readonly isSun = computed(
+    () => !this.lookMode() && this.selection.selected().kind === 'sun',
+  );
+  /** Sun safety banner: the Sun is the target, or (Look Around) the Sun is near the middle of the screen. */
+  protected readonly showSunBanner = computed(
+    () => this.isSun() || (this.lookMode() && this.engine.lookSunNearCenter()),
+  );
   protected readonly selectedDef = this.selection.selected;
   protected readonly glyph = targetGlyph;
   protected readonly pickerOpen = signal(false);
@@ -89,7 +108,7 @@ export class App {
   });
   /** A satellite is selected but there is no usable orbit data (yet): say so instead of showing nothing. */
   protected readonly orbitStatus = computed<'loading' | 'unavailable' | null>(() => {
-    if (this.selection.selected().kind !== 'satellite') return null;
+    if (this.lookMode() || this.selection.selected().kind !== 'satellite') return null;
     if (this.gp.status() === 'unavailable' || this.engine.targetError() === 'propagation-failed') {
       return 'unavailable';
     }
@@ -111,7 +130,7 @@ export class App {
   );
 
   /** Copy stays until the Moon is first seen, then gets out of the way. */
-  protected readonly showIntro = computed(() => !this.moonSeen());
+  protected readonly showIntro = computed(() => !this.moonSeen() && !this.lookMode());
   protected readonly needsLocationFallback = computed(
     () => this.locationStatus() === 'denied' || this.locationStatus() === 'unavailable',
   );
@@ -138,6 +157,9 @@ export class App {
     });
     // How the target was chosen, for the very first one: a shared link, or the default.
     this.analytics.targetSelected(this.selection.selectedId(), this.selection.initialSource);
+    // Look Around at startup (a ?mode=look link or a remembered choice).
+    if (this.engine.initialLookSource)
+      this.analytics.lookAroundOpened(this.engine.initialLookSource);
 
     // Which sensor path this device ended up on, once per session.
     effect(() => {
@@ -228,6 +250,15 @@ export class App {
       default:
         return null;
     }
+  }
+
+  /** "Find it" on the info card: select the target, go back to find mode, close the card and the picker. */
+  protected findFromInfo(def: TargetDef): void {
+    this.selection.select(def.id);
+    this.engine.setMode('find');
+    this.analytics.targetSelected(def.id, 'info');
+    this.info.close();
+    this.pickerOpen.set(false);
   }
 
   protected openPicker(): void {

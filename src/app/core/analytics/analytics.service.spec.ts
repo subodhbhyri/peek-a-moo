@@ -20,6 +20,8 @@ const ALLOWED: Record<AnalyticsEventName, string[]> = {
   alignment_locked: ['correction'],
   share: ['method', 'target'],
   sensor_mode: ['mode'],
+  look_around_opened: ['from'],
+  target_info_opened: ['from', 'target'],
 };
 
 function setup(search = '') {
@@ -74,6 +76,47 @@ describe('AnalyticsService', () => {
     expect(sent[2].props).toEqual({ correction: '5-15' });
     expect(sent[3].props).toEqual({ target: 'iss', method: 'native' });
     expect(sent[4].props).toEqual({ mode: 'ios' });
+  });
+
+  it('target_selected also reports from "info" ("Find it" on an info card), with exactly { target, from }', () => {
+    const { sent, analytics } = setup();
+    analytics.targetSelected('saturn', 'info');
+    expect(sent).toEqual([{ name: 'target_selected', props: { target: 'saturn', from: 'info' } }]);
+    expect(Object.keys(sent[0].props).sort()).toEqual(ALLOWED.target_selected);
+  });
+
+  it('Phase 8 events carry exactly { from } and { target, from }', () => {
+    const { sent, analytics } = setup();
+    analytics.lookAroundOpened('picker');
+    analytics.lookAroundOpened('link');
+    analytics.lookAroundOpened('restored');
+    analytics.targetInfoOpened('jupiter', 'picker');
+    analytics.targetInfoOpened('iss', 'found');
+    analytics.targetInfoOpened('sirius', 'look-around');
+    expect(sent.map((s) => s.name)).toEqual([
+      'look_around_opened',
+      'look_around_opened',
+      'look_around_opened',
+      'target_info_opened',
+      'target_info_opened',
+      'target_info_opened',
+    ]);
+    for (const s of sent) {
+      expect(Object.keys(s.props).sort(), s.name).toEqual(ALLOWED[s.name as AnalyticsEventName]);
+    }
+    expect(sent.slice(0, 3).map((s) => s.props)).toEqual([
+      { from: 'picker' },
+      { from: 'link' },
+      { from: 'restored' },
+    ]);
+    expect(sent[4].props).toEqual({ target: 'iss', from: 'found' });
+  });
+
+  it('the Phase 8 events are silent under ?debug', () => {
+    const { sent, analytics } = setup('?debug');
+    analytics.lookAroundOpened('picker');
+    analytics.targetInfoOpened('moon', 'picker');
+    expect(sent).toEqual([]);
   });
 
   it('extra input never reaches the sink: location, coordinates and user agent cannot ride along', () => {

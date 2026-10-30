@@ -17,6 +17,7 @@ export {
   degreesToRadians,
   ecfToLookAngles,
   eciToEcf,
+  eciToGeodetic,
   geodeticToEcf,
 } from '../../../node_modules/satellite.js/dist/transforms.js';
 export type {

@@ -12,6 +12,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { TargetInfoService } from '../target-info/target-info.service';
 import { AnalyticsService, SelectionSource } from '../../core/analytics/analytics.service';
 import { GpService } from '../../core/gp/gp.service';
 import { StatsService } from '../../core/personality/stats.service';
@@ -102,6 +103,23 @@ const FOCUSABLE =
           />
 
           <div class="scroll">
+            @if (!searching()) {
+              <button
+                type="button"
+                class="look-around"
+                [attr.aria-current]="lookActive() ? 'true' : null"
+                (click)="lookAround()"
+              >
+                <span class="glyph" aria-hidden="true">◎</span>
+                <span class="text">
+                  <span class="name">Look Around</span>
+                  <span class="sub">See everything at once</span>
+                </span>
+                @if (lookActive()) {
+                  <span class="check" role="img" aria-label="Selected">✓</span>
+                }
+              </button>
+            }
             @if (best().length > 0 && !searching()) {
               <section>
                 <h3>Best right now</h3>
@@ -121,7 +139,7 @@ const FOCUSABLE =
                 <h3>{{ section.title }}</h3>
                 <ul>
                   @for (row of section.rows; track row.def.id) {
-                    <li>
+                    <li class="item">
                       <button
                         type="button"
                         class="row"
@@ -157,6 +175,14 @@ const FOCUSABLE =
                         @if (row.selected) {
                           <span class="check" role="img" aria-label="Selected">✓</span>
                         }
+                      </button>
+                      <button
+                        type="button"
+                        class="info-btn"
+                        [attr.aria-label]="'About ' + row.def.name"
+                        (click)="openInfo(row.def, $event)"
+                      >
+                        <span aria-hidden="true">ⓘ</span>
                       </button>
                     </li>
                   }
@@ -280,6 +306,54 @@ const FOCUSABLE =
       border-radius: 999px;
       cursor: pointer;
     }
+    .item {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(233, 230, 220, 0.07);
+    }
+    .item .row {
+      flex: 1;
+      min-width: 0;
+      border-bottom: 0;
+    }
+    .info-btn {
+      flex: none;
+      width: 44px;
+      height: 44px;
+      font: inherit;
+      font-size: 1.2rem;
+      color: inherit;
+      opacity: 0.7;
+      background: none;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .info-btn:focus-visible,
+    .look-around:focus-visible {
+      outline: 2px solid #e9e6dc;
+      outline-offset: 2px;
+    }
+    .sub {
+      font-size: 0.82rem;
+      opacity: 0.7;
+    }
+    .look-around {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      width: 100%;
+      min-height: 56px;
+      margin: 0.4rem 0 0.2rem;
+      padding: 0.4rem 0.8rem;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      background: rgba(233, 230, 220, 0.08);
+      border: 1px solid rgba(233, 230, 220, 0.18);
+      border-radius: 0.8rem;
+      cursor: pointer;
+    }
     .row {
       display: flex;
       align-items: center;
@@ -382,12 +456,19 @@ const FOCUSABLE =
 export class TargetPicker {
   readonly open = input.required<boolean>();
   readonly closed = output<void>();
+  /** Whether Look Around is the current mode (shows the check mark on its row). */
+  readonly lookActive = input(false);
+  /** Look Around was chosen. The parent switches the engine's mode. */
+  readonly lookAroundChosen = output<void>();
+  /** A target was chosen (so the parent leaves Look Around for find mode). */
+  readonly targetChosen = output<string>();
 
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
   private readonly stats = inject(StatsService);
   private readonly gp = inject(GpService);
   private readonly analytics = inject(AnalyticsService);
+  private readonly info = inject(TargetInfoService);
   private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('sheet');
 
   protected readonly query = signal('');
@@ -487,12 +568,26 @@ export class TargetPicker {
     this.apply(def.id, from);
   }
 
+  /** Enter Look Around: every target at once, no finding. */
+  protected lookAround(): void {
+    this.lookAroundChosen.emit();
+    this.analytics.lookAroundOpened('picker');
+    this.close();
+  }
+
+  /** The (i) on a row: the info card opens over the sheet; the sheet stays where it was. */
+  protected openInfo(def: TargetDef, event: Event): void {
+    event.stopPropagation();
+    this.info.open(def, 'picker');
+  }
+
   protected confirmSun(): void {
     this.apply('sun', 'picker');
   }
 
   private apply(id: string, from: SelectionSource): void {
     this.selection.select(id);
+    this.targetChosen.emit(id);
     this.analytics.targetSelected(id, from);
     this.query.set('');
     this.pendingSun.set(false);
@@ -506,7 +601,8 @@ export class TargetPicker {
   }
 
   protected onEscape(): void {
-    if (this.open()) this.close();
+    // The info card (above this sheet) handles its own Escape.
+    if (this.open() && !this.info.current()) this.close();
   }
 
   /** Keeps Tab inside the dialog. */
