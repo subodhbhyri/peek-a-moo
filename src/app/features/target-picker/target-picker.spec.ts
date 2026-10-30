@@ -10,6 +10,7 @@ import { LocationService } from '../../core/sensors/location.service';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { TargetPicker, normalizeSearch } from './target-picker';
 
+const CLOCK = new Date('2026-10-30T01:20:00Z');
 const POS = { latitude: 39.6, longitude: -104.7, heightM: 1800 };
 
 describe('normalizeSearch', () => {
@@ -62,10 +63,22 @@ describe('TargetPicker', () => {
       ],
     });
     vi.useFakeTimers();
+    // A fixed clock, and orbit data fetched 10 minutes before it: GpService only reuses a copy that is
+    // at most 2 h old by the clock, so a fixture with a fixed date must not depend on the real time.
+    vi.setSystemTime(CLOCK);
     // The Satellites section asks for orbit data as soon as the sheet shows it.
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify(GP_FIXTURE), { status: 200 })),
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              ...GP_FIXTURE,
+              fetchedAt: new Date(CLOCK.getTime() - 600_000).toISOString(),
+            }),
+            { status: 200 },
+          ),
+      ),
     );
     localStorage.clear();
     history.replaceState(null, '', '/');
