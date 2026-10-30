@@ -71,9 +71,11 @@ describe('App: satellites and the network', () => {
     expect(gpGet).not.toHaveBeenCalled();
     el.querySelector<HTMLButtonElement>('.intro .link')!.click();
     fixture.detectChanges();
-    await fixture.whenStable();
-    expect(gpGet).toHaveBeenCalled();
-    expect(fetchMock.mock.calls.filter((c) => c[0] === '/api/gp')).toHaveLength(1);
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(gpGet).toHaveBeenCalled();
+      expect(fetchMock.mock.calls.filter((c) => c[0] === '/api/gp')).toHaveLength(1);
+    });
   });
 
   it('selecting a satellite fetches the orbit data and the intro says "Find the ISS." plus its pass label', async () => {

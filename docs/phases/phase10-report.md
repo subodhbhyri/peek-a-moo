@@ -165,3 +165,27 @@ The star map (`sky.json`) is now fetched in exactly four situations: Look Around
 ### 3. Gate
 
 Format, lint, `ng test` (71 files, 718 tests, 30 s on this machine, unrestricted) and `ng build` all pass; `format:check` is clean.
+
+## Follow-up 2: CI failures in `app.sky.spec.ts`
+
+CI (GitHub Actions, about 2 cores) failed two tests that passed locally: "selecting a constellation (?target=orion) fetches it once, and the target appears" (`expected 'loading' to be 'ready'`) and "a constellation info card fetches it once; closing and reopening does not fetch again" (0 fetch calls instead of 1).
+
+**Cause.** As suspected: the assertions ran before the async work finished. My `settle()` helper yielded four microtask ticks and then called `fixture.whenStable()`. But the mocked `Response.json()` reads its body on a *later macrotask*, so on a slow runner the test looked at the app while the status was still `'loading'` (or before the effect that starts the fetch had run). Locally the event loop got there in time; on 2 cores it did not. `public/data/sky.json` is tracked (`git ls-files` lists it, committed in `0c0f084`), so it was not a missing file.
+
+**Reproduced and verified.** Earlier pinned runs never reproduced it, so I forced it: with the mocked sky response made to arrive 300 ms late, the *old* spec fails 5 tests (both CI failures, plus the picker-scroll, Look Around and remembered-off tests, which had the same flaw); the fixed spec passes all 20 with the same delay.
+
+**Fix: wait for the condition, not for ticks** (`app.sky.spec.ts`)
+- A helper `until(condition)` built on `vi.waitFor` (10 s ceiling, 10 ms poll, change detection on every poll), returned by `render()`. Every async step now waits on its real condition: the fetch was made (`skyCalls() >= 1`), `SkyDataService.status() === 'ready'` / `'unavailable'`, `geometry() !== null`, the engine's target is `orion`, `.orbit-status` text, the dialog/card is open or closed, the live-stat row exists.
+- The mocked fetch is an `async` function whose result the test controls; the "Getting the star map…" test holds the response in a promise it resolves itself, after waiting for the request to start.
+- The **exact-count assertions are kept, after the wait**: exactly 1 star-map request, and no second request after closing and reopening the card or after a second observer fires. For those "no second request" checks the test also yields a short macrotask (20 ms) so a wrongly started second request would have had time to appear.
+- A second, related hang showed up in the next 2-core run (`app.sky.spec` timing out at 15 s in the two tests that open the picker): `fixture.whenStable()` waits for every chunked availability `setTimeout` the picker schedules, and on a stalled machine that is unbounded. `settle()` in this file is now one macrotask plus change detection, with no `whenStable()`, and opening the picker waits for the dialog and for the section observer to exist. (This is the same call that stalled the Phase 9 city-picker test earlier.)
+
+**Same pattern elsewhere in Phases 8–10 (fixed)**
+- `target-picker.spec.ts` (Phase 8): four tests called `settle()` twice and hoped the mocked orbit-data request had finished in between (satellite rows, "Orbit data unavailable", "Best right now"). They now use `settleWithOrbitData()`: settle, `vi.waitFor` the `GpService` status to be `ready`/`unavailable`, settle.
+- `target-info.spec.ts` (Phase 8): the ISS card test advanced fake timers by 10 ms and read the "Height" row; it now `vi.waitFor`s for the row.
+- `app.satellite.spec.ts` (Phase 6, same flaw): "opening the picker is what asks … once" now waits for the one `/api/gp` call instead of `whenStable()`.
+- `target-picker.constellations.spec.ts` (mine): "once the star map is loaded the rows get a status" computed availability for all 88 constellations to find a "Partly up" one and timed out at 5 s in one unrestricted run. It now finds a partly-up constellation directly with the provider and searches for just that row (2.0 s → 0.47 s).
+- Checked and left alone: `app.look.spec.ts` (its fetch is a constant 500; nothing depends on it), `app.location.spec.ts` (already uses `vi.waitFor` where it waits for data), `city-picker.spec.ts` (already fixed in Follow-up 1), the engine, provider, sky-field, render and data-service specs (synchronous or already awaiting the actual promise).
+- Not changed: other specs still use `fixture.whenStable()` in their `settle()` (`app.look`, `app.location`, `app.intro`, `app.analytics`, `sun-safety`, `target-picker*`). They passed every run, so I did not rewrite them, but `whenStable()` is the common thread in both hangs I saw; if one of them flakes on CI, that call is the first suspect.
+
+**Verification.** Format, lint, `ng test` and `ng build` pass (71 files, 718 tests; main bundle 138.10 KB gzipped; no warnings). Full suite pinned to 2 CPUs, five runs: **5 of 5 clean**, 36–45 s each (plus two unrestricted runs, also clean). Before the last two changes, one pinned run and one unrestricted run each failed once, which is what led to the `whenStable()` removal and the cheaper picker test above.

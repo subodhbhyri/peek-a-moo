@@ -187,8 +187,6 @@ describe('TargetInfo card', () => {
     expect(light()).not.toBe(before);
 
     open('iss');
-    await vi.advanceTimersByTimeAsync(10);
-    fixture.detectChanges();
     const height = () =>
       qa('.stat')
         .find((r) => r.querySelector('dt')!.textContent === 'Height')
@@ -197,7 +195,11 @@ describe('TargetInfo card', () => {
       qa('.stat')
         .find((r) => r.querySelector('dt')!.textContent === 'Speed')
         ?.querySelector('dd')?.textContent;
-    expect(height()).toMatch(/km above Earth$/);
+    // The orbit data arrives from the (mocked) request on a later macrotask: wait for it, not for a tick count.
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(height()).toMatch(/km above Earth$/);
+    });
     expect(speed()).toMatch(/km\/s$/);
     const h0 = height();
     vi.setSystemTime(new Date(Date.now() + 600_000));

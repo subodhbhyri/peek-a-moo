@@ -7,7 +7,8 @@ import { SKY_URL, SkyDataService } from '../../core/sky/sky-data.service';
 import { skyGeometry } from '../../core/sky/testing/sky-fixture';
 import type { Availability } from '../../core/targets/availability';
 import { AvailabilityService } from '../../core/targets/availability.service';
-import { TARGETS } from '../../core/targets/catalog';
+import { TARGETS, getTarget } from '../../core/targets/catalog';
+import { computeTargetState } from '../../core/targets/compute';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { TargetPicker } from './target-picker';
 
@@ -171,14 +172,19 @@ describe('TargetPicker: Constellations (Phase 10)', () => {
     await settle();
     await settle();
     expect(status('Octans')).toBe('Never rises from here');
-    // A partly-up one shows up somewhere in the list as "Partly up".
-    type('');
-    fixture.componentInstance['showAllConstellations'].set(true);
-    fixture.detectChanges();
+    // A partly-up one shows its label. Find one directly (cheap) and search for just that row, rather than
+    // computing all 88 constellations, which made this test slow enough to time out on a busy machine.
+    const sky = skyGeometry();
+    const partly = sky.constellations.find(
+      (c) =>
+        computeTargetState(getTarget(c.id)!, CLOCK, POS, undefined, sky).constellation?.partlyUp,
+    );
+    expect(partly).toBeDefined();
+    const partlyName = getTarget(partly!.id)!.name;
+    type(partlyName);
     await settle();
     await settle();
-    const labels = qa('.row .status').map((s) => s.textContent!.trim());
-    expect(labels.some((l) => l === 'Partly up')).toBe(true);
+    expect(status(partlyName)).toBe('Partly up');
   });
 
   it('constellations never appear in "Best right now", even when they are up and the rest are not', async () => {

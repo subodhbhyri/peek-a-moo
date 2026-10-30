@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { GpService } from '../../core/gp/gp.service';
 import { GP_FIXTURE } from '../../core/gp/testing/gp-fixture';
 import { ANALYTICS_SINK } from '../../core/analytics/analytics.service';
 import { StatsService } from '../../core/personality/stats.service';
@@ -36,6 +37,19 @@ describe('TargetPicker', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+  }
+
+  /**
+   * Settles, then waits for the (mocked) orbit-data request to finish one way or the other, then settles
+   * again so the satellite rows have rendered. The mocked Response body is read on a later macrotask, so
+   * a fixed number of settle() calls is not enough on a slow CI machine.
+   */
+  async function settleWithOrbitData() {
+    await settle();
+    await vi.waitFor(() =>
+      expect(['ready', 'unavailable']).toContain(TestBed.inject(GpService).status()),
+    );
+    await settle();
   }
 
   function create(open = true) {
@@ -124,8 +138,7 @@ describe('TargetPicker', () => {
     // The first target is computed in the same tick as opening; the rest fill in one per timer tick.
     expect(qa('.skeleton').length).toBe(TARGETS.length - 1);
     expect(qa('.status')).toHaveLength(1);
-    await settle();
-    await settle(); // orbit data arrives after the first pass; the satellite rows fill in on the second
+    await settleWithOrbitData(); // the satellite rows fill in once the orbit data is in
     expect(qa('.skeleton')).toHaveLength(0);
     expect(qa('.status')).toHaveLength(TARGETS.length);
     expect(rowFor('Galactic Center').querySelector('.status')!.textContent).toMatch(
@@ -398,8 +411,7 @@ describe('TargetPicker', () => {
     it('shows skeletons until the data arrives, then a pass label per satellite', async () => {
       create();
       expect(rowFor('International Space Station').querySelector('.skeleton')).not.toBeNull();
-      await settle();
-      await settle();
+      await settleWithOrbitData();
       for (const name of ['International Space Station', 'Tiangong', 'Hubble']) {
         const status = rowFor(name).querySelector('.status')!.textContent!;
         expect(status, name).toMatch(/^(Overhead now|Visible pass|No visible passes today)/);
@@ -412,8 +424,7 @@ describe('TargetPicker', () => {
         vi.fn(async () => new Response('nope', { status: 500 })),
       );
       create();
-      await settle();
-      await settle();
+      await settleWithOrbitData();
       for (const name of ['International Space Station', 'Tiangong', 'Hubble']) {
         expect(rowFor(name).querySelector('.status')!.textContent).toBe('Orbit data unavailable');
       }
@@ -423,8 +434,7 @@ describe('TargetPicker', () => {
 
     it('a satellite is never in "Best right now" unless it is overhead and visible', async () => {
       create();
-      await settle();
-      await settle();
+      await settleWithOrbitData();
       const best = qa('.chips .chip').map((c) => c.textContent!.trim());
       const isOverheadVisible = (id: string) =>
         TestBed.inject(AvailabilityService).byId()[id]?.visibleNow === true;
