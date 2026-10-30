@@ -16,7 +16,7 @@ export interface DebugReportInput {
   compassAccuracyDeg: number | null;
   declinationDeg: number;
   location: { lat: number; lon: number } | null;
-  locationSource: 'gps' | 'manual';
+  locationSource: 'gps' | 'manual' | 'timezone';
   alignment: StoredAlignment | null;
   cameraOn: boolean;
   vFovDegInUse: number;

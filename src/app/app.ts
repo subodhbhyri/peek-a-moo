@@ -10,7 +10,8 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { City } from './core/data/cities';
+import { formatCoordinates } from './core/data/coordinates';
+import type { PickedLocation } from './features/city-picker/city-picker';
 import { TargetInfo } from './features/target-info/target-info';
 import { TargetInfoService } from './features/target-info/target-info.service';
 import type { TargetDef } from './core/targets/target.types';
@@ -131,9 +132,27 @@ export class App {
 
   /** Copy stays until the Moon is first seen, then gets out of the way. */
   protected readonly showIntro = computed(() => !this.moonSeen() && !this.lookMode());
-  protected readonly needsLocationFallback = computed(
-    () => this.locationStatus() === 'denied' || this.locationStatus() === 'unavailable',
-  );
+  /**
+   * The location chip: "Set location" only when there is no position at all (denied, and no time-zone area
+   * or saved city to fall back on); otherwise it says where we think you are, with a way to change it.
+   * Nothing for GPS. Never a blocking screen.
+   */
+  protected readonly locationChip = computed<string | null>(() => {
+    if (this.gate() !== 'running') return null;
+    const pos = this.location.position();
+    const source = this.location.source();
+    if (!pos) {
+      const s = this.locationStatus();
+      return s === 'denied' || s === 'unavailable' ? 'Set location' : null;
+    }
+    if (source === 'timezone') {
+      return `Using ${this.location.label()} area (from your time zone) · Change`;
+    }
+    if (source === 'manual') {
+      return `${this.location.label() ?? formatCoordinates(pos)} · Change`;
+    }
+    return null;
+  });
   protected readonly needsDragFallback = computed(() => {
     const s = this.orientationStatus();
     return (s === 'unsupported' || s === 'no-compass') && this.gate() === 'running';
@@ -282,8 +301,16 @@ export class App {
     });
   }
 
-  protected onCitySelected(city: City): void {
-    this.location.setManual({ latitude: city.latitude, longitude: city.longitude, heightM: 0 });
+  protected onLocationChosen(place: PickedLocation): void {
+    this.location.chooseManual(
+      { latitude: place.latitude, longitude: place.longitude, heightM: 0 },
+      place.label,
+    );
+    this.showCityPicker.set(false);
+  }
+
+  protected onUseTimeZone(): void {
+    this.location.useTimeZone();
     this.showCityPicker.set(false);
   }
 

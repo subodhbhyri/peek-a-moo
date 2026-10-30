@@ -180,7 +180,7 @@ export class DebugOverlay {
       compassAccuracyDeg: this.ori.compassAccuracyDeg(),
       declinationDeg: d?.declination ?? 0,
       location: pos ? { lat: pos.latitude, lon: pos.longitude } : null,
-      locationSource: this.loc.status() === 'manual' ? 'manual' : 'gps',
+      locationSource: this.loc.source() === 'gps' ? 'gps' : (this.loc.source() ?? 'gps'),
       alignment: this.alignment.stored(),
       cameraOn: this.fov.cameraOn(),
       vFovDegInUse: this.fov.vFovInUseDeg(),

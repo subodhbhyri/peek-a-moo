@@ -72,6 +72,8 @@ Phones need HTTPS for motion sensors, so test on a deployed preview (see below),
 
 **Satellite data.** `ng serve` does not run Vercel functions, so locally the app uses the bundled snapshot `public/data/gp-fallback.json`. To try the real endpoint, run `npx vercel dev`. `npm run gp:refresh` rewrites the snapshot (a weekly GitHub Action does too). CelesTrak asks clients to fetch at most once per update; our function caches for 2 hours and never retries.
 
+**Location.** GPS is used when allowed and never stored. If it is denied or unavailable, the app falls back to a place you chose before (remembered on this device, rounded to about 1 km), then to the reference point of your device's time zone (no prompt, no network), and only then asks for a city. A nearby city is close enough: the sky looks the same within about 100 km. The city list (`public/data/cities.json`, about 6,000 places) loads only when the picker opens; regenerate it with `node scripts/cities.mjs` and the time-zone table with `node scripts/tz-locations.mjs`.
+
 **Share links.** `?target=<id>` opens straight into a target, e.g. `/?target=jupiter`; `?mode=look` opens Look Around.
 
 ## Credits
@@ -79,6 +81,7 @@ Phones need HTTPS for motion sensors, so test on a deployed preview (see below),
 - [astronomy-engine](https://github.com/cosinekitty/astronomy) by Don Cross: ephemeris, rise/set, illumination.
 - [satellite.js](https://github.com/shashwatak/satellite-js): SGP4 propagation.
 - [geomagnetism](https://github.com/naturalatlas/geomagnetism) with the NOAA/BGS World Magnetic Model (WMM2025).
+- [GeoNames](https://www.geonames.org) (CC BY 4.0) for the city list, and the IANA time zone database for the time-zone fallback.
 - [CelesTrak](https://celestrak.org) for public orbital elements; please read their usage guidance on the site before building on it (they ask clients to download at most once per update).
 - Angular, Vercel Web Analytics.
 

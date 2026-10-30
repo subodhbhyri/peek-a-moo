@@ -249,7 +249,7 @@ const BASE_TARGETS: readonly Omit<TargetDef, 'info'>[] = [
     kind: 'fixed',
     category: 'deep-sky',
     blurb:
-      'A satellite galaxy of the Milky Way, about 160,000 light-years away; only visible from the southern hemisphere.',
+      'A satellite galaxy of the Milky Way, about 160,000 light-years away; best seen from the southern hemisphere.',
     render: 'extended',
     fixed: {
       raHours: 5.392917,

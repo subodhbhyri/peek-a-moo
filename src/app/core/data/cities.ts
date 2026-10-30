@@ -1,116 +1,132 @@
-/** A deliberately compact list of major cities for the "location denied" fallback picker. */
+/** A place for the manual location fallback. City-level accuracy is plenty: 100 km moves things by about 1 degree. */
 export interface City {
   name: string;
+  /** ASCII spelling, for matching "Bogota" to "Bogotá"; same as name when it has no accents. */
+  ascii: string;
+  /** Short country name, e.g. "UAE". */
   country: string;
+  /** First-level region, only given where the name is ambiguous within the country. */
+  admin1: string;
   latitude: number;
   longitude: number;
+  /** Rounded; only used to rank search results. */
+  population: number;
 }
 
-export const CITIES: readonly City[] = [
-  { name: 'New York', country: 'USA', latitude: 40.7128, longitude: -74.006 },
-  { name: 'Los Angeles', country: 'USA', latitude: 34.0522, longitude: -118.2437 },
-  { name: 'Chicago', country: 'USA', latitude: 41.8781, longitude: -87.6298 },
-  { name: 'Houston', country: 'USA', latitude: 29.7604, longitude: -95.3698 },
-  { name: 'Phoenix', country: 'USA', latitude: 33.4484, longitude: -112.074 },
-  { name: 'San Francisco', country: 'USA', latitude: 37.7749, longitude: -122.4194 },
-  { name: 'Seattle', country: 'USA', latitude: 47.6062, longitude: -122.3321 },
-  { name: 'Denver', country: 'USA', latitude: 39.7392, longitude: -104.9903 },
-  { name: 'Dallas', country: 'USA', latitude: 32.7767, longitude: -96.797 },
-  { name: 'Miami', country: 'USA', latitude: 25.7617, longitude: -80.1918 },
-  { name: 'Atlanta', country: 'USA', latitude: 33.749, longitude: -84.388 },
-  { name: 'Boston', country: 'USA', latitude: 42.3601, longitude: -71.0589 },
-  { name: 'Austin', country: 'USA', latitude: 30.2672, longitude: -97.7431 },
-  { name: 'Las Vegas', country: 'USA', latitude: 36.1699, longitude: -115.1398 },
-  { name: 'Portland', country: 'USA', latitude: 45.5152, longitude: -122.6784 },
-  { name: 'Minneapolis', country: 'USA', latitude: 44.9778, longitude: -93.265 },
-  { name: 'Detroit', country: 'USA', latitude: 42.3314, longitude: -83.0458 },
-  { name: 'Philadelphia', country: 'USA', latitude: 39.9526, longitude: -75.1652 },
-  { name: 'Orlando', country: 'USA', latitude: 28.5383, longitude: -81.3792 },
-  { name: 'Honolulu', country: 'USA', latitude: 21.3069, longitude: -157.8583 },
-  { name: 'Anchorage', country: 'USA', latitude: 61.2181, longitude: -149.9003 },
-  { name: 'Toronto', country: 'Canada', latitude: 43.6532, longitude: -79.3832 },
-  { name: 'Vancouver', country: 'Canada', latitude: 49.2827, longitude: -123.1207 },
-  { name: 'Montreal', country: 'Canada', latitude: 45.5019, longitude: -73.5674 },
-  { name: 'Mexico City', country: 'Mexico', latitude: 19.4326, longitude: -99.1332 },
-  { name: 'Bogotá', country: 'Colombia', latitude: 4.711, longitude: -74.0721 },
-  { name: 'Lima', country: 'Peru', latitude: -12.0464, longitude: -77.0428 },
-  { name: 'São Paulo', country: 'Brazil', latitude: -23.5505, longitude: -46.6333 },
-  { name: 'Rio de Janeiro', country: 'Brazil', latitude: -22.9068, longitude: -43.1729 },
-  { name: 'Buenos Aires', country: 'Argentina', latitude: -34.6037, longitude: -58.3816 },
-  { name: 'Santiago', country: 'Chile', latitude: -33.4489, longitude: -70.6693 },
-  { name: 'London', country: 'UK', latitude: 51.5074, longitude: -0.1278 },
-  { name: 'Manchester', country: 'UK', latitude: 53.4808, longitude: -2.2426 },
-  { name: 'Dublin', country: 'Ireland', latitude: 53.3498, longitude: -6.2603 },
-  { name: 'Paris', country: 'France', latitude: 48.8566, longitude: 2.3522 },
-  { name: 'Marseille', country: 'France', latitude: 43.2965, longitude: 5.3698 },
-  { name: 'Madrid', country: 'Spain', latitude: 40.4168, longitude: -3.7038 },
-  { name: 'Barcelona', country: 'Spain', latitude: 41.3874, longitude: 2.1686 },
-  { name: 'Lisbon', country: 'Portugal', latitude: 38.7223, longitude: -9.1393 },
-  { name: 'Berlin', country: 'Germany', latitude: 52.52, longitude: 13.405 },
-  { name: 'Munich', country: 'Germany', latitude: 48.1351, longitude: 11.582 },
-  { name: 'Frankfurt', country: 'Germany', latitude: 50.1109, longitude: 8.6821 },
-  { name: 'Amsterdam', country: 'Netherlands', latitude: 52.3676, longitude: 4.9041 },
-  { name: 'Brussels', country: 'Belgium', latitude: 50.8503, longitude: 4.3517 },
-  { name: 'Zurich', country: 'Switzerland', latitude: 47.3769, longitude: 8.5417 },
-  { name: 'Vienna', country: 'Austria', latitude: 48.2082, longitude: 16.3738 },
-  { name: 'Rome', country: 'Italy', latitude: 41.9028, longitude: 12.4964 },
-  { name: 'Milan', country: 'Italy', latitude: 45.4642, longitude: 9.19 },
-  { name: 'Athens', country: 'Greece', latitude: 37.9838, longitude: 23.7275 },
-  { name: 'Stockholm', country: 'Sweden', latitude: 59.3293, longitude: 18.0686 },
-  { name: 'Oslo', country: 'Norway', latitude: 59.9139, longitude: 10.7522 },
-  { name: 'Copenhagen', country: 'Denmark', latitude: 55.6761, longitude: 12.5683 },
-  { name: 'Helsinki', country: 'Finland', latitude: 60.1699, longitude: 24.9384 },
-  { name: 'Reykjavik', country: 'Iceland', latitude: 64.1466, longitude: -21.9426 },
-  { name: 'Warsaw', country: 'Poland', latitude: 52.2297, longitude: 21.0122 },
-  { name: 'Prague', country: 'Czechia', latitude: 50.0755, longitude: 14.4378 },
-  { name: 'Budapest', country: 'Hungary', latitude: 47.4979, longitude: 19.0402 },
-  { name: 'Bucharest', country: 'Romania', latitude: 44.4268, longitude: 26.1025 },
-  { name: 'Kyiv', country: 'Ukraine', latitude: 50.4501, longitude: 30.5234 },
-  { name: 'Moscow', country: 'Russia', latitude: 55.7558, longitude: 37.6173 },
-  { name: 'Istanbul', country: 'Turkey', latitude: 41.0082, longitude: 28.9784 },
-  { name: 'Cairo', country: 'Egypt', latitude: 30.0444, longitude: 31.2357 },
-  { name: 'Lagos', country: 'Nigeria', latitude: 6.5244, longitude: 3.3792 },
-  { name: 'Nairobi', country: 'Kenya', latitude: -1.2921, longitude: 36.8219 },
-  { name: 'Casablanca', country: 'Morocco', latitude: 33.5731, longitude: -7.5898 },
-  { name: 'Cape Town', country: 'South Africa', latitude: -33.9249, longitude: 18.4241 },
-  { name: 'Johannesburg', country: 'South Africa', latitude: -26.2041, longitude: 28.0473 },
-  { name: 'Tel Aviv', country: 'Israel', latitude: 32.0853, longitude: 34.7818 },
-  { name: 'Dubai', country: 'UAE', latitude: 25.2048, longitude: 55.2708 },
-  { name: 'Riyadh', country: 'Saudi Arabia', latitude: 24.7136, longitude: 46.6753 },
-  { name: 'Doha', country: 'Qatar', latitude: 25.2854, longitude: 51.531 },
-  { name: 'Tehran', country: 'Iran', latitude: 35.6892, longitude: 51.389 },
-  { name: 'Karachi', country: 'Pakistan', latitude: 24.8607, longitude: 67.0011 },
-  { name: 'Lahore', country: 'Pakistan', latitude: 31.5497, longitude: 74.3436 },
-  { name: 'Mumbai', country: 'India', latitude: 19.076, longitude: 72.8777 },
-  { name: 'Delhi', country: 'India', latitude: 28.6139, longitude: 77.209 },
-  { name: 'Bengaluru', country: 'India', latitude: 12.9716, longitude: 77.5946 },
-  { name: 'Hyderabad', country: 'India', latitude: 17.385, longitude: 78.4867 },
-  { name: 'Chennai', country: 'India', latitude: 13.0827, longitude: 80.2707 },
-  { name: 'Kolkata', country: 'India', latitude: 22.5726, longitude: 88.3639 },
-  { name: 'Dhaka', country: 'Bangladesh', latitude: 23.8103, longitude: 90.4125 },
-  { name: 'Kathmandu', country: 'Nepal', latitude: 27.7172, longitude: 85.324 },
-  { name: 'Colombo', country: 'Sri Lanka', latitude: 6.9271, longitude: 79.8612 },
-  { name: 'Bangkok', country: 'Thailand', latitude: 13.7563, longitude: 100.5018 },
-  { name: 'Hanoi', country: 'Vietnam', latitude: 21.0278, longitude: 105.8342 },
-  { name: 'Ho Chi Minh City', country: 'Vietnam', latitude: 10.8231, longitude: 106.6297 },
-  { name: 'Singapore', country: 'Singapore', latitude: 1.3521, longitude: 103.8198 },
-  { name: 'Kuala Lumpur', country: 'Malaysia', latitude: 3.139, longitude: 101.6869 },
-  { name: 'Jakarta', country: 'Indonesia', latitude: -6.2088, longitude: 106.8456 },
-  { name: 'Manila', country: 'Philippines', latitude: 14.5995, longitude: 120.9842 },
-  { name: 'Hong Kong', country: 'China', latitude: 22.3193, longitude: 114.1694 },
-  { name: 'Shanghai', country: 'China', latitude: 31.2304, longitude: 121.4737 },
-  { name: 'Beijing', country: 'China', latitude: 39.9042, longitude: 116.4074 },
-  { name: 'Shenzhen', country: 'China', latitude: 22.5431, longitude: 114.0579 },
-  { name: 'Taipei', country: 'Taiwan', latitude: 25.033, longitude: 121.5654 },
-  { name: 'Seoul', country: 'South Korea', latitude: 37.5665, longitude: 126.978 },
-  { name: 'Busan', country: 'South Korea', latitude: 35.1796, longitude: 129.0756 },
-  { name: 'Tokyo', country: 'Japan', latitude: 35.6762, longitude: 139.6503 },
-  { name: 'Osaka', country: 'Japan', latitude: 34.6937, longitude: 135.5023 },
-  { name: 'Sapporo', country: 'Japan', latitude: 43.0618, longitude: 141.3545 },
-  { name: 'Sydney', country: 'Australia', latitude: -33.8688, longitude: 151.2093 },
-  { name: 'Melbourne', country: 'Australia', latitude: -37.8136, longitude: 144.9631 },
-  { name: 'Brisbane', country: 'Australia', latitude: -27.4698, longitude: 153.0251 },
-  { name: 'Perth', country: 'Australia', latitude: -31.9505, longitude: 115.8605 },
-  { name: 'Auckland', country: 'New Zealand', latitude: -36.8485, longitude: 174.7633 },
-  { name: 'Wellington', country: 'New Zealand', latitude: -41.2865, longitude: 174.7762 },
+/** The shape of public/data/cities.json (see scripts/cities.mjs). */
+export interface CitiesFile {
+  columns: string[];
+  cities: [string, string, string, string, number, number, number][];
+}
+
+export function citiesFromFile(file: CitiesFile): City[] {
+  return file.cities.map(([name, ascii, country, admin1, latitude, longitude, population]) => ({
+    name,
+    ascii: ascii || name,
+    country,
+    admin1,
+    latitude,
+    longitude,
+    population,
+  }));
+}
+
+/** "Abu Dhabi, UAE" (or "Springfield, Illinois, USA" when the region disambiguates). */
+export function cityLabel(c: Pick<City, 'name' | 'country' | 'admin1'>): string {
+  return c.admin1 ? `${c.name}, ${c.admin1}, ${c.country}` : `${c.name}, ${c.country}`;
+}
+
+const cap = (name: string, country: string, latitude: number, longitude: number): City => ({
+  name,
+  ascii: name.normalize('NFD').replace(/[̀-ͯ]/g, ''),
+  country,
+  admin1: '',
+  latitude,
+  longitude,
+  population: 1,
+});
+
+/**
+ * Used only if public/data/cities.json cannot be fetched (offline on a first visit): about 30 capitals
+ * spread over the world, so the picker is never empty.
+ */
+export const FALLBACK_CITIES: readonly City[] = [
+  cap('Abu Dhabi', 'UAE', 24.4539, 54.3773),
+  cap('Riyadh', 'Saudi Arabia', 24.7136, 46.6753),
+  cap('Tehran', 'Iran', 35.6892, 51.389),
+  cap('Ankara', 'Turkey', 39.9334, 32.8597),
+  cap('Cairo', 'Egypt', 30.0444, 31.2357),
+  cap('Addis Ababa', 'Ethiopia', 9.03, 38.74),
+  cap('Nairobi', 'Kenya', -1.2921, 36.8219),
+  cap('Abuja', 'Nigeria', 9.0765, 7.3986),
+  cap('Pretoria', 'South Africa', -25.7479, 28.2293),
+  cap('New Delhi', 'India', 28.6139, 77.209),
+  cap('Islamabad', 'Pakistan', 33.6844, 73.0479),
+  cap('Dhaka', 'Bangladesh', 23.8103, 90.4125),
+  cap('Bangkok', 'Thailand', 13.7563, 100.5018),
+  cap('Jakarta', 'Indonesia', -6.2088, 106.8456),
+  cap('Beijing', 'China', 39.9042, 116.4074),
+  cap('Seoul', 'South Korea', 37.5665, 126.978),
+  cap('Tokyo', 'Japan', 35.6762, 139.6503),
+  cap('Canberra', 'Australia', -35.2809, 149.13),
+  cap('Wellington', 'New Zealand', -41.2865, 174.7762),
+  cap('Moscow', 'Russia', 55.7558, 37.6173),
+  cap('Kyiv', 'Ukraine', 50.4501, 30.5234),
+  cap('Berlin', 'Germany', 52.52, 13.405),
+  cap('Paris', 'France', 48.8566, 2.3522),
+  cap('Madrid', 'Spain', 40.4168, -3.7038),
+  cap('Rome', 'Italy', 41.9028, 12.4964),
+  cap('London', 'UK', 51.5074, -0.1278),
+  cap('Ottawa', 'Canada', 45.4215, -75.6972),
+  cap('Washington, D.C.', 'USA', 38.9072, -77.0369),
+  cap('Mexico City', 'Mexico', 19.4326, -99.1332),
+  cap('Bogotá', 'Colombia', 4.711, -74.0721),
+  cap('Lima', 'Peru', -12.0464, -77.0428),
+  cap('Brasília', 'Brazil', -15.7939, -47.8828),
+  cap('Buenos Aires', 'Argentina', -34.6037, -58.3816),
+  cap('Santiago', 'Chile', -33.4489, -70.6693),
 ];
+
+/** Lowercase, accent-free, trimmed: the form searches compare in. */
+export function normalizeSearch(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+/** A city with its search strings computed once, so a keystroke is a cheap scan. */
+export interface IndexedCity {
+  city: City;
+  name: string;
+  ascii: string;
+}
+
+/** Sorted by population, biggest first (the order each search tier keeps). */
+export function buildIndex(cities: readonly City[]): IndexedCity[] {
+  return [...cities]
+    .sort((a, b) => b.population - a.population)
+    .map((city) => ({
+      city,
+      name: normalizeSearch(city.name),
+      ascii: normalizeSearch(city.ascii),
+    }));
+}
+
+/**
+ * Case- and accent-insensitive: names (or ASCII names) that START with the query first, then ones that
+ * merely CONTAIN it ("dhabi" finds Abu Dhabi), each tier ranked by population, at most `limit` results.
+ * An empty query lists the biggest cities.
+ */
+export function searchCities(index: readonly IndexedCity[], query: string, limit = 30): City[] {
+  const q = normalizeSearch(query);
+  if (!q) return index.slice(0, limit).map((i) => i.city);
+  const prefix: City[] = [];
+  const inside: City[] = [];
+  for (const i of index) {
+    if (i.name.startsWith(q) || i.ascii.startsWith(q)) {
+      if (prefix.length < limit) prefix.push(i.city);
+    } else if (i.name.includes(q) || i.ascii.includes(q)) {
+      if (inside.length < limit) inside.push(i.city);
+    }
+    if (prefix.length >= limit) break;
+  }
+  return [...prefix, ...inside].slice(0, limit);
+}

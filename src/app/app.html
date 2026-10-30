@@ -109,12 +109,16 @@
   <p class="stale-hint">Lower your phone flat for a second to re-sync the compass.</p>
 }
 
-@if (needsLocationFallback() && gate() === 'running') {
+@if (locationChip(); as chipText) {
   <div class="corner-control location-control">
     @if (showCityPicker()) {
-      <app-city-picker (pick)="onCitySelected($event)" />
+      <app-city-picker
+        (choose)="onLocationChosen($event)"
+        (useTimeZone)="onUseTimeZone()"
+        (closed)="showCityPicker.set(false)"
+      />
     } @else {
-      <button type="button" class="chip" (click)="showCityPicker.set(true)">Set location</button>
+      <button type="button" class="chip" (click)="showCityPicker.set(true)">{{ chipText }}</button>
     }
   </div>
 }
