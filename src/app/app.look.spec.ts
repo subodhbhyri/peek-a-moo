@@ -6,6 +6,10 @@ import { SkyEngineService } from './core/engine/sky-engine.service';
 import { LocationService } from './core/sensors/location.service';
 import { TargetSelectionService } from './core/targets/target-selection.service';
 
+// Each test bootstraps the whole App, and the first one in a file pays the cold start: slow on a loaded or
+// 2-core CI machine. A per-file allowance (the global default stays 5 s).
+vi.setConfig({ testTimeout: 15_000 });
+
 const POS = { latitude: 39.6, longitude: -104.7, heightM: 1800 };
 
 describe('App: info cards and Look Around', () => {
@@ -67,7 +71,8 @@ describe('App: info cards and Look Around', () => {
     await openPicker();
     const btn = el.querySelector<HTMLButtonElement>('.info-btn[aria-label="About Jupiter"]')!;
     expect(btn).not.toBeNull();
-    expect(el.querySelectorAll('.info-btn').length).toBe(22);
+    // The 22 targets, plus the 22 prominent constellations (Phase 10).
+    expect(el.querySelectorAll('.info-btn').length).toBe(22 + 22);
     btn.click();
     await settle();
     expect(el.querySelector('[aria-label="About Jupiter"][role=dialog]')).not.toBeNull();

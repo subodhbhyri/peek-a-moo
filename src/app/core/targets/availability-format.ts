@@ -148,6 +148,8 @@ export function formatAvailability(
     }
   }
 
+  if (def?.kind === 'constellation' && a.partlyUp) return out('Partly up', 'meh');
+
   const rise = riseText(a, now, locale, timeZone);
   if (rise) return out(`Rises ${rise.phrase}`, rise.soon ? 'meh' : 'off');
   return out('Not up in the next 2 days', 'off');
@@ -187,6 +189,9 @@ export function introNote(
       default:
         return `${name} is up, but too faint to see by eye.`;
     }
+  }
+  if (def.kind === 'constellation' && a.partlyUp) {
+    return `${name} is partly up right now: its middle is below the horizon, but part of it is above.`;
   }
   const rise = riseText(a, now, locale, timeZone);
   if (rise) {

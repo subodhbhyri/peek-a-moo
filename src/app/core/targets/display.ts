@@ -9,6 +9,8 @@ import type { TargetState } from './target.types';
 const CENTERED_THRESHOLD = 0.35;
 /** Planets never draw smaller than this fraction of the shorter screen side (radius). */
 export const MIN_PLANET_FRACTION = 0.035;
+/** A constellation's display radius is computed from at most this half-angle. */
+const MAX_FIGURE_HALF_DEG = 70;
 
 /**
  * On-screen radius in CSS px.
@@ -17,12 +19,18 @@ export const MIN_PLANET_FRACTION = 0.035;
  *    else the minimum. (Saturn's rings are drawn out to 2.25 globe radii around this radius.)
  *  - Stars: their visible glow radius, from magnitude.
  *  - Satellites: a fixed dot, whatever their (tiny) true size.
+ *  - Constellations: the figure's true size (twice the largest angle from its center to a vertex).
  */
 export function displayRadiusFor(state: TargetState, viewport: Viewport): number {
   const def = getTarget(state.id);
   if (def?.render === 'star') return starGlowRadiusPx(state.magnitude ?? 6);
   if (def?.render === 'satellite') return SATELLITE_CORE_PX;
   // Planets and extended objects: true size, but never smaller than the minimum sprite.
+  if (def?.render === 'constellation') {
+    // The figure at its true size (capped so a huge one cannot blow up the tangent).
+    const halfDeg = Math.min(state.angularSizeDeg / 2, MAX_FIGURE_HALF_DEG);
+    return focalLengthPx(viewport) * Math.tan(halfDeg * DEG);
+  }
   if (def?.kind === 'planet' || def?.render === 'extended') {
     const minPx = MIN_PLANET_FRACTION * Math.min(viewport.width, viewport.height);
     const truePx = focalLengthPx(viewport) * Math.tan((state.angularSizeDeg * DEG) / 2);

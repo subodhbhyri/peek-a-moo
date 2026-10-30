@@ -8,6 +8,7 @@ export function recomputeIntervalMs(kind: TargetKind): number {
     case 'sun':
     case 'planet':
     case 'fixed':
+    case 'constellation':
       return 30_000;
     case 'satellite':
       return 0;

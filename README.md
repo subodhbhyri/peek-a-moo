@@ -74,6 +74,8 @@ Phones need HTTPS for motion sensors, so test on a deployed preview (see below),
 
 **Location.** GPS is used when allowed and never stored. If it is denied or unavailable, the app falls back to a place you chose before (remembered on this device, rounded to about 1 km), then to the reference point of your device's time zone (no prompt, no network), and only then asks for a city. A nearby city is close enough: the sky looks the same within about 100 km. The city list (`public/data/cities.json`, about 6,000 places) loads only when the picker opens; regenerate it with `node scripts/cities.mjs` and the time-zone table with `node scripts/tz-locations.mjs`.
 
+**Star map.** Look Around draws about 1,600 real background stars (magnitude 5.0 and brighter) and the 88 IAU constellations as stick figures with their names; every constellation is also a findable target. The data (`public/data/sky.json`, 28 KB gzipped) is fetched only when Look Around starts or a constellation is selected, never at app start and never in the main bundle. Regenerate it with `node scripts/sky-data.mjs` (reads the pinned dev dependency `d3-celestial` 0.7.35). **Red night mode** (the eye button, or the `n` key) keeps your eyes dark-adapted.
+
 **Share links.** `?target=<id>` opens straight into a target, e.g. `/?target=jupiter`; `?mode=look` opens Look Around.
 
 ## Credits
@@ -81,6 +83,7 @@ Phones need HTTPS for motion sensors, so test on a deployed preview (see below),
 - [astronomy-engine](https://github.com/cosinekitty/astronomy) by Don Cross: ephemeris, rise/set, illumination.
 - [satellite.js](https://github.com/shashwatak/satellite-js): SGP4 propagation.
 - [geomagnetism](https://github.com/naturalatlas/geomagnetism) with the NOAA/BGS World Magnetic Model (WMM2025).
+- [d3-celestial](https://github.com/ofrohn/d3-celestial) by Olaf Frohn (BSD-3-Clause, Hipparcos-based) for the star positions, constellation figures and names; its license notice is kept at `public/data/LICENSE-d3-celestial.txt`.
 - [GeoNames](https://www.geonames.org) (CC BY 4.0) for the city list, and the IANA time zone database for the time-zone fallback.
 - [CelesTrak](https://celestrak.org) for public orbital elements; please read their usage guidance on the site before building on it (they ask clients to download at most once per update).
 - Angular, Vercel Web Analytics.

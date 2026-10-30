@@ -16,6 +16,8 @@ import { SUN_SAFETY_BANNER } from '../../core/personality/target-lines';
 import { LocationService } from '../../core/sensors/location.service';
 import { computeTargetState } from '../../core/targets/compute';
 import { LiveStat, liveStats } from '../../core/targets/live-stats';
+import { SkyDataService } from '../../core/sky/sky-data.service';
+import { SkyDataError } from '../../core/targets/providers/constellation';
 import { SatelliteDataError } from '../../core/targets/providers/satellite';
 import type { TargetDef } from '../../core/targets/target.types';
 import { targetGlyph } from '../target-picker/target-glyph';
@@ -83,11 +85,13 @@ const FOCUSABLE =
           }
 
           <p class="desc">{{ c.def.info.description }}</p>
-          <ul class="facts">
-            @for (fact of c.def.info.facts; track fact) {
-              <li>{{ fact }}</li>
-            }
-          </ul>
+          @if (c.def.info.facts.length > 0) {
+            <ul class="facts">
+              @for (fact of c.def.info.facts; track fact) {
+                <li>{{ fact }}</li>
+              }
+            </ul>
+          }
 
           <dl class="stats">
             @for (s of stats(); track s.label) {
@@ -270,6 +274,7 @@ export class TargetInfo {
   private readonly info = inject(TargetInfoService);
   private readonly location = inject(LocationService);
   private readonly gp = inject(GpService);
+  private readonly sky = inject(SkyDataService);
   private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('sheet');
 
   /** "Find it": the parent selects the target, leaves Look Around and closes everything. */
@@ -293,11 +298,12 @@ export class TargetInfo {
     if (!c || !pos) return [];
     try {
       const elements = this.gp.elements() ?? undefined;
-      const state = computeTargetState(c.def, now, pos, elements);
+      const state = computeTargetState(c.def, now, pos, elements, this.sky.geometry() ?? undefined);
       return liveStats(c.def, state, now, { elements });
     } catch (e) {
-      // A satellite whose orbit data is not here (yet): show nothing rather than guess.
-      if (e instanceof SatelliteDataError) return [];
+      // A satellite whose orbit data is not here (yet), or a constellation whose star map has not been
+      // loaded (this card never loads it): show nothing rather than guess.
+      if (e instanceof SatelliteDataError || e instanceof SkyDataError) return [];
       throw e;
     }
   });
@@ -312,6 +318,8 @@ export class TargetInfo {
           this.clock.set(new Date());
           // A user action (they asked about a satellite), so loading its orbit data is allowed.
           if (c.def.kind === 'satellite') void this.gp.get();
+          // Likewise a constellation's card: its live row needs the star map.
+          if (c.def.kind === 'constellation') void this.sky.load();
           const every = c.def.kind === 'satellite' ? SATELLITE_REFRESH_MS : REFRESH_MS;
           this.timer = setInterval(() => this.clock.set(new Date()), every);
           setTimeout(() => this.sheetRef()?.nativeElement.focus(), 0);

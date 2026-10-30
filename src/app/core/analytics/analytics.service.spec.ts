@@ -22,6 +22,8 @@ const ALLOWED: Record<AnalyticsEventName, string[]> = {
   sensor_mode: ['mode'],
   look_around_opened: ['from'],
   target_info_opened: ['from', 'target'],
+  night_mode_toggled: ['on'],
+  constellations_toggled: ['on'],
 };
 
 function setup(search = '') {
@@ -110,6 +112,45 @@ describe('AnalyticsService', () => {
       { from: 'restored' },
     ]);
     expect(sent[4].props).toEqual({ target: 'iss', from: 'found' });
+  });
+
+  it('Phase 10 events carry exactly { on }, and constellation finds reuse target_selected / target_found', () => {
+    const { sent, analytics } = setup();
+    analytics.nightModeToggled(true);
+    analytics.nightModeToggled(false);
+    analytics.constellationsToggled(false);
+    analytics.targetSelected('orion', 'picker');
+    analytics.targetFound({
+      target: 'orion',
+      durationMs: 4200,
+      visibility: 'up-visible',
+      camera: false,
+      aligned: false,
+    });
+    expect(sent.map((s) => s.name)).toEqual([
+      'night_mode_toggled',
+      'night_mode_toggled',
+      'constellations_toggled',
+      'target_selected',
+      'target_found',
+    ]);
+    for (const s of sent) {
+      expect(Object.keys(s.props).sort(), s.name).toEqual(ALLOWED[s.name as AnalyticsEventName]);
+    }
+    expect(sent.slice(0, 3).map((s) => s.props)).toEqual([
+      { on: true },
+      { on: false },
+      { on: false },
+    ]);
+    expect(sent[3].props).toEqual({ target: 'orion', from: 'picker' });
+    expect(sent[4].props['target']).toBe('orion');
+  });
+
+  it('the Phase 10 events are silent under ?debug', () => {
+    const { sent, analytics } = setup('?debug');
+    analytics.nightModeToggled(true);
+    analytics.constellationsToggled(true);
+    expect(sent).toEqual([]);
   });
 
   it('the Phase 8 events are silent under ?debug', () => {

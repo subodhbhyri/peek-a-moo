@@ -21,7 +21,7 @@
       "installMode": "lazy",
       "updateMode": "lazy",
       "resources": {
-        "files": ["/data/cities.json"]
+        "files": ["/data/cities.json", "/data/sky.json", "/data/LICENSE-d3-celestial.txt"]
       }
     },
     {

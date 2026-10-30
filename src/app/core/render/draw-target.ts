@@ -1,4 +1,5 @@
 import type { SkyFrame } from '../engine/sky-engine.service';
+import { drawConstellation } from './draw-constellation';
 import { drawExtended } from './draw-extended';
 import { drawPlanet } from './draw-planet';
 import { drawSatellite } from './draw-satellite';
@@ -34,6 +35,9 @@ export function drawTarget(ctx: CanvasRenderingContext2D, frame: SkyFrame): void
       return;
     case 'satellite':
       drawSatellite(ctx, frame);
+      return;
+    case 'constellation':
+      drawConstellation(ctx, frame);
       return;
     default:
       throw new Error(`Render style "${frame.def.render}" is not implemented yet.`);

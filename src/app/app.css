@@ -74,7 +74,8 @@ p {
   left: max(1rem, env(safe-area-inset-left));
   bottom: max(1rem, env(safe-area-inset-bottom));
 }
-.camera-toggle {
+.camera-toggle,
+.night-toggle {
   top: max(1rem, env(safe-area-inset-top));
   right: max(1rem, env(safe-area-inset-right));
   width: 2.4rem;
@@ -156,8 +157,27 @@ p {
   background: #ffcf4d;
   pointer-events: none;
 }
-.camera-toggle.below-banner {
+.camera-toggle.below-banner,
+.night-toggle.below-banner {
   top: calc(env(safe-area-inset-top, 0px) + 3.6rem);
+}
+.night-toggle {
+  right: calc(max(1rem, env(safe-area-inset-right)) + 3rem);
+  color: #e9e6dc;
+}
+.constellations-chip {
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.night-toggle[aria-pressed='true'],
+.constellations-chip.on {
+  background: rgba(233, 230, 220, 0.22);
+}
+
+:host(.night) .sun-banner {
+  z-index: 1001;
+  background: #ff0000;
+  color: #000;
 }
 .camera-toggle.disabled {
   opacity: 0.35;

@@ -1,9 +1,11 @@
 import type { MoonPhaseName } from '../astro/ephemeris';
 import type { Vec3 } from '../math/vec3';
 
-export type TargetKind = 'moon' | 'sun' | 'planet' | 'fixed' | 'satellite';
-export type TargetCategory = 'solar-system' | 'stars' | 'deep-sky' | 'satellites';
-export type RenderStyle = 'moon' | 'planet' | 'sun' | 'star' | 'extended' | 'satellite';
+export type TargetKind = 'moon' | 'sun' | 'planet' | 'fixed' | 'satellite' | 'constellation';
+export type TargetCategory =
+  'solar-system' | 'stars' | 'deep-sky' | 'satellites' | 'constellations';
+export type RenderStyle =
+  'moon' | 'planet' | 'sun' | 'star' | 'extended' | 'satellite' | 'constellation';
 
 /** Info card content (Phase 8). Facts that do not go stale; see target-info-content.ts. */
 export interface TargetInfo {
@@ -11,7 +13,7 @@ export interface TargetInfo {
   type: string;
   /** 1-2 sentences, plain language, at most 220 characters. */
   description: string;
-  /** Exactly three, each at most 120 characters. */
+  /** Exactly three, each at most 120 characters; none for the 66 constellations of rank 2-3. */
   facts: readonly string[];
   /** Fixed-sky targets only: distance in light-years (shown with "about"). */
   distanceLy?: number;
@@ -52,6 +54,15 @@ export interface TargetDef {
     noradId: number;
     /** Typical brightness when sunlit; the state's magnitude is null in Earth's shadow. */
     magnitude: number;
+  };
+  /** Constellations (Phase 10): names and prominence. The figure itself is in the lazily loaded star map. */
+  constellation?: {
+    /** IAU abbreviation: 'Ori'. */
+    iau: string;
+    /** The standard English meaning: 'Hunter'. */
+    english: string;
+    /** 1 = the 22 most prominent, 2 = 24, 3 = 42. */
+    rank: 1 | 2 | 3;
   };
   /** Sun and planets: how to draw the disc, and the radius its angular size is computed from. */
   planet?: PlanetStyle;
@@ -118,6 +129,8 @@ export interface TargetState {
     stale: boolean;
     trail: Vec3[];
   };
+  /** Constellations: some of the figure is above the horizon (even when its center is not). */
+  constellation?: { partlyUp: boolean };
   /**
    * Added in Phase 2 (not in ARCHITECTURE §5.2): Sun altitude at `computedAt`. The find-line selector
    * needs it ("daytime Moon"), and the Moon provider already has it for free.

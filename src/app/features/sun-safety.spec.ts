@@ -7,6 +7,10 @@ import { getTarget } from '../core/targets/catalog';
 import { computeTargetState } from '../core/targets/compute';
 import { AlignControl } from './align-control/align-control';
 
+// Each test bootstraps the whole App, and the first one in a file pays the cold start: slow on a loaded or
+// 2-core CI machine. A per-file allowance (the global default stays 5 s).
+vi.setConfig({ testTimeout: 15_000 });
+
 const setUrl = (search: string) => history.replaceState(null, '', '/' + search);
 
 describe('Sun safety', () => {

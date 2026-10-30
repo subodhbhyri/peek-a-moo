@@ -35,6 +35,8 @@ src/app/core/
                              (+ service, formatter), satellite-passes
     providers/               moon, solar-system, fixed-sky, satellite  (pure: def, date, observer -> TargetState)
   gp/                        GpService (memory -> localStorage -> /api/gp -> snapshot), element-age flags
+  sky/                       Phase 10 star map: SkyDataService (lazy sky.json), SkyField (typed-array EQJ->ENU transform once a second,
+                             per-frame projection), constellation index and facts. night/: red night mode
   satellite-lib.ts           the few satellite.js functions we use, imported from its dist/ files
   engine/sky-engine.service  glue: selection + location + orientation + provider + projection + find tracker
   tracking/find-tracker.ts   searching -> visible -> found -> lost state machine
@@ -168,6 +170,7 @@ Line packs per target (`core/personality/lines/<id>.ts`) sharing the existing ta
 | Stars | Polaris, Sirius, Betelgeuse, Vega, Arcturus |
 | Deep sky | Andromeda Galaxy (M31), Orion Nebula (M42), Pleiades (M45), Galactic Center (Sgr A*), Large Magellanic Cloud |
 | Satellites | ISS, Tiangong, Hubble |
+| Constellations (Phase 10) | the 88 IAU constellations. `ALL_TARGETS` is these plus the 22 above; `TARGETS` stays the 22 |
 
 Later candidates: Voyager 1/2 (fixed coordinates from JPL Horizons, refreshed yearly), Starlink trains, comets of the season, meteor shower radiants, a "JWST is roughly here" anti-Sun marker.
 
@@ -184,6 +187,7 @@ Each phase is one file in `docs/phases/`, sized for one Claude Code (Sonnet) ses
 | 5 | Picker + availability (rise/set, labels) + `?target=` deep links | Done. [report](phases/phase5-report.md) |
 | 6 | Satellites: `api/gp`, OMM + SGP4, passes, trail renderer | Done. [report](phases/phase6-report.md) |
 | 7 | Per-target personality, analytics, rename, README | Done. [report](phases/phase7-report.md) |
+| 10 | Constellations (88 figures + ~1,600 background stars from a lazy `sky.json`), constellations as targets, red night mode | Done. [report](phases/phase10-report.md) |
 
 Still open from the field-test gates: Android pointing accuracy, camera-mode overlay/FOV on a real video, the Phase 5/6 on-device checks (picker usability, ISS pass against a public tracker), and the Phase 7 launch checks. They are listed as manual checks in each report.
 

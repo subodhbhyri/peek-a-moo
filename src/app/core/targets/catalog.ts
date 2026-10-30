@@ -1,3 +1,4 @@
+import { CONSTELLATION_TARGETS } from './constellation-targets';
 import type { TargetDef } from './target.types';
 import { TARGET_INFO } from './target-info-content';
 
@@ -301,6 +302,14 @@ export const TARGETS: readonly TargetDef[] = BASE_TARGETS.map((t) => ({
   info: TARGET_INFO[t.id],
 }));
 
+/**
+ * Every selectable target: the 22 above plus the 88 constellations (Phase 10). `TARGETS` stays the 22
+ * point-like targets: Look Around draws constellations as a layer of their own, not as markers.
+ */
+export const ALL_TARGETS: readonly TargetDef[] = [...TARGETS, ...CONSTELLATION_TARGETS];
+
+const BY_ID = new Map(ALL_TARGETS.map((t) => [t.id, t]));
+
 export function getTarget(id: string): TargetDef | undefined {
-  return TARGETS.find((t) => t.id === id);
+  return BY_ID.get(id);
 }

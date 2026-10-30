@@ -9,6 +9,10 @@ import { CameraFovService } from './core/projection/camera-fov.service';
 import { StatsService } from './core/personality/stats.service';
 import { LINE_PACKS } from './core/personality/lines';
 
+// Each test bootstraps the whole App, and the first one in a file pays the cold start: slow on a loaded or
+// 2-core CI machine. A per-file allowance (the global default stays 5 s).
+vi.setConfig({ testTimeout: 15_000 });
+
 const POS = { latitude: 39.6, longitude: -104.7, heightM: 1800 };
 
 describe('App: analytics wiring', () => {

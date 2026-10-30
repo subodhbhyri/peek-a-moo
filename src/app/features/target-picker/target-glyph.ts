@@ -15,5 +15,7 @@ export function targetGlyph(def: TargetDef): string {
       return def.fixed?.style === 'marker' ? '⊕' : '◌';
     case 'satellite':
       return '◆';
+    case 'constellation':
+      return '✧';
   }
 }

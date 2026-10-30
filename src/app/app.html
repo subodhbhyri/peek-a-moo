@@ -31,6 +31,11 @@
     }
   </button>
 }
+@if (starMapStatus(); as status) {
+  <p class="orbit-status" role="status">
+    {{ status === 'loading' ? 'Getting the star map…' : 'Star map unavailable' }}
+  </p>
+}
 @if (orbitStatus(); as status) {
   <p class="orbit-status" role="status">
     {{ status === 'loading' ? 'Getting orbit data…' : 'Orbit data unavailable' }}
@@ -129,6 +134,25 @@
 
 <button
   type="button"
+  class="corner-control night-toggle"
+  [class.below-banner]="showSunBanner()"
+  (click)="toggleNight()"
+  aria-label="Red night mode"
+  [attr.aria-pressed]="night.on()"
+>
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path
+      d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linejoin="round"
+    />
+    <circle cx="12" cy="12" r="3.2" fill="currentColor" />
+  </svg>
+</button>
+<button
+  type="button"
   class="corner-control camera-toggle"
   [class.below-banner]="showSunBanner()"
   [class.disabled]="isSun()"
@@ -147,6 +171,22 @@
   <p class="camera-error">{{ err }}</p>
 }
 
+@if (lookMode() && gate() === 'running') {
+  <button
+    type="button"
+    class="corner-control chip constellations-chip"
+    [class.on]="engine.constellationsOn()"
+    [attr.aria-pressed]="engine.constellationsOn()"
+    (click)="toggleConstellations()"
+  >
+    Constellations
+  </button>
+}
+
 @if (debug) {
   <app-debug-overlay />
+}
+
+@if (night.on()) {
+  <app-night-overlay />
 }

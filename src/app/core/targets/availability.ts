@@ -1,5 +1,7 @@
 import type { GeoPosition } from '../astro/ephemeris';
 import type { SatelliteElements } from '../gp/gp.types';
+import { neverRisesFor } from '../sky/constellation-visibility';
+import type { SkyGeometry } from '../sky/sky-geometry';
 import { getTarget } from './catalog';
 import { computeTargetState } from './compute';
 import { type Crossings, type ScanOptions, scanCrossings } from './crossings';
@@ -31,8 +33,10 @@ export interface Availability {
   alwaysUp: boolean;
   /** Never rises within the window. */
   neverUp: boolean;
-  /** Fixed targets only: geometrically impossible at this latitude. */
+  /** Fixed targets and constellations: geometrically impossible at this latitude. */
   neverRisesHere: boolean;
+  /** Constellations (Phase 10): the center is below the horizon but part of the figure is above it. */
+  partlyUp?: boolean;
   /** Satellites only (Phase 6). Their orbit data could not be loaded: nothing else here is meaningful. */
   orbitDataUnavailable?: boolean;
   /** Satellites: the pass in progress (above 10 degrees now), if any. */
@@ -67,6 +71,8 @@ export const DEFAULT_SKY_LIMITS: SkyLimits = {
 };
 
 export const LOW_ALTITUDE_DEG = 10;
+/** Constellations are judged as if they were a magnitude-3 object: their stars are naked-eye ones. */
+export const CONSTELLATION_NOMINAL_MAG = 3;
 
 /**
  * Visibility of a target given its altitude, magnitude and the Sun's altitude.
@@ -105,6 +111,8 @@ export interface AvailabilityOptions {
   scan?: Partial<ScanOptions>;
   /** Orbital elements, needed for satellite targets. */
   elements?: SatelliteElements;
+  /** The star map, needed for constellations. */
+  sky?: SkyGeometry;
 }
 
 /** Availability of one target at `now` from `pos`. Pure: no clocks, no Angular. */
@@ -117,22 +125,31 @@ export function computeAvailability(
   if (def.kind === 'satellite') {
     return computeSatelliteAvailability(def, now, pos, opts.elements, opts.scan);
   }
-  const state = computeTargetState(def, now, pos);
+  const state = computeTargetState(def, now, pos, undefined, opts.sky);
   const sunDef = getTarget('sun');
   const sunAlt =
     def.kind === 'sun' || !sunDef
       ? state.altitudeDeg
       : computeTargetState(sunDef, now, pos).altitudeDeg;
-  const visibility = visibilityFor(state.altitudeDeg, state.magnitude, sunAlt, opts.limits);
+  // A figure has no magnitude of its own; it is made of naked-eye stars, so it is judged as one.
+  const magnitudeForVisibility =
+    def.kind === 'constellation' ? CONSTELLATION_NOMINAL_MAG : state.magnitude;
+  const visibility = visibilityFor(state.altitudeDeg, magnitudeForVisibility, sunAlt, opts.limits);
   const up = state.altitudeDeg > 0;
 
+  const geo = def.kind === 'constellation' ? opts.sky?.byId.get(def.id) : undefined;
   const neverRisesHere =
-    def.kind === 'fixed' && !!def.fixed && neverRisesAtLatitude(def.fixed.decDeg, pos.latitude);
+    (def.kind === 'fixed' && !!def.fixed && neverRisesAtLatitude(def.fixed.decDeg, pos.latitude)) ||
+    (!!geo && neverRisesFor(geo, pos.latitude));
 
   // Geometry settles fixed targets that can never rise; everything else is scanned.
   const crossings: Crossings = neverRisesHere
     ? { rises: [], sets: [], alwaysUp: false, neverUp: true }
-    : scanCrossings((d) => computeTargetState(def, d, pos).altitudeDeg, now, opts.scan);
+    : scanCrossings(
+        (d) => computeTargetState(def, d, pos, undefined, opts.sky).altitudeDeg,
+        now,
+        opts.scan,
+      );
   const nextRise = crossings.rises[0] ?? null;
   const nextSet = crossings.sets[0] ?? null;
   const { alwaysUp, neverUp } = crossings;
@@ -149,6 +166,7 @@ export function computeAvailability(
     alwaysUp,
     neverUp,
     neverRisesHere,
+    ...(state.constellation && { partlyUp: state.constellation.partlyUp }),
   };
 }
 

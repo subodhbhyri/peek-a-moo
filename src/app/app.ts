@@ -17,6 +17,8 @@ import { TargetInfoService } from './features/target-info/target-info.service';
 import type { TargetDef } from './core/targets/target.types';
 import { AnalyticsService, SensorMode } from './core/analytics/analytics.service';
 import { GpService } from './core/gp/gp.service';
+import { NightModeService } from './core/night/night-mode.service';
+import { SkyDataService } from './core/sky/sky-data.service';
 import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
 import { AvailabilityService } from './core/targets/availability.service';
 import { introNote } from './core/targets/availability-format';
@@ -31,6 +33,7 @@ import { AlignControl } from './features/align-control/align-control';
 import { CameraSettings } from './features/camera-settings/camera-settings';
 import { CityPicker } from './features/city-picker/city-picker';
 import { DebugOverlay } from './features/debug-overlay/debug-overlay';
+import { NightOverlay } from './features/night-overlay/night-overlay';
 import { SkyView } from './features/sky-view/sky-view';
 import { TargetPicker } from './features/target-picker/target-picker';
 import { targetGlyph } from './features/target-picker/target-glyph';
@@ -54,13 +57,14 @@ type Gate = 'needs-tap' | 'starting' | 'running' | 'motion-denied';
     CityPicker,
     AlignControl,
     CameraSettings,
+    NightOverlay,
     TargetPicker,
     TargetInfo,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',
-  host: { '(click)': 'onTap()' },
+  host: { '(click)': 'onTap()', '[class.night]': 'night.on()' },
 })
 export class App {
   private readonly location = inject(LocationService);
@@ -71,6 +75,8 @@ export class App {
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
   private readonly gp = inject(GpService);
+  private readonly sky = inject(SkyDataService);
+  protected readonly night = inject(NightModeService);
   private readonly analytics = inject(AnalyticsService);
   private readonly info = inject(TargetInfoService);
   private readonly destroyRef = inject(DestroyRef);
@@ -114,6 +120,13 @@ export class App {
       return 'unavailable';
     }
     return this.engine.target() === null && this.gp.status() === 'loading' ? 'loading' : null;
+  });
+  /** A constellation is selected but the star map is not here (yet): say so instead of showing nothing. */
+  protected readonly starMapStatus = computed<'loading' | 'unavailable' | null>(() => {
+    if (this.lookMode() || this.selection.selected().kind !== 'constellation') return null;
+    if (this.engine.target() !== null) return null;
+    const s = this.sky.status();
+    return s === 'unavailable' ? 'unavailable' : s === 'loading' ? 'loading' : null;
   });
   protected readonly sunBanner = SUN_SAFETY_BANNER;
   protected readonly sunCameraNote = SUN_CAMERA_NOTE;
@@ -194,6 +207,26 @@ export class App {
         if (def.kind === 'satellite') this.availability.ensure(def);
       });
     });
+
+    // A constellation's availability needs the star map: compute it when that arrives.
+    effect(() => {
+      this.sky.geometry();
+      const def = this.selection.selected();
+      untracked(() => {
+        if (def.kind === 'constellation') this.availability.ensure(def);
+      });
+    });
+
+    // "n" toggles red night mode (not while typing in a field).
+    const onNightKey = (e: KeyboardEvent) => {
+      if (e.key !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      this.toggleNight();
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onNightKey);
+    this.destroyRef.onDestroy(() => window.removeEventListener('keydown', onNightKey));
 
     // Desktop / drag mode: "t" opens the picker.
     const onKey = (e: KeyboardEvent) => {
@@ -278,6 +311,16 @@ export class App {
     this.analytics.targetSelected(def.id, 'info');
     this.info.close();
     this.pickerOpen.set(false);
+  }
+
+  protected toggleNight(): void {
+    this.analytics.nightModeToggled(this.night.toggle());
+  }
+
+  protected toggleConstellations(): void {
+    const on = !this.engine.constellationsOn();
+    this.engine.setConstellations(on);
+    this.analytics.constellationsToggled(on);
   }
 
   protected openPicker(): void {

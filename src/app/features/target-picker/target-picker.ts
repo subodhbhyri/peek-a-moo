@@ -16,9 +16,10 @@ import { TargetInfoService } from '../target-info/target-info.service';
 import { AnalyticsService, SelectionSource } from '../../core/analytics/analytics.service';
 import { GpService } from '../../core/gp/gp.service';
 import { StatsService } from '../../core/personality/stats.service';
+import { SkyDataService } from '../../core/sky/sky-data.service';
 import { AvailabilityService } from '../../core/targets/availability.service';
 import { formatAvailability } from '../../core/targets/availability-format';
-import { TARGETS } from '../../core/targets/catalog';
+import { ALL_TARGETS, TARGETS } from '../../core/targets/catalog';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import type { TargetCategory, TargetDef } from '../../core/targets/target.types';
 import { SUN_SAFETY_BANNER } from '../../core/personality/target-lines';
@@ -30,7 +31,11 @@ const SECTIONS: readonly { category: TargetCategory; title: string }[] = [
   { category: 'stars', title: 'Stars' },
   { category: 'deep-sky', title: 'Deep sky' },
   { category: 'satellites', title: 'Satellites' },
+  { category: 'constellations', title: 'Constellations' },
 ];
+
+/** The constellations section shows just the most prominent ones until the user asks for all of them. */
+const PROMINENT_RANK = 1;
 
 const BEST_MAX = 3;
 const SWIPE_CLOSE_PX = 90;
@@ -135,7 +140,7 @@ const FOCUSABLE =
             }
 
             @for (section of sections(); track section.category) {
-              <section>
+              <section [attr.data-category]="section.category">
                 <h3>{{ section.title }}</h3>
                 <ul>
                   @for (row of section.rows; track row.def.id) {
@@ -168,6 +173,8 @@ const FOCUSABLE =
                             <span class="status" [class]="'status ' + row.status.tone">{{
                               row.status.label
                             }}</span>
+                          } @else if (row.blurb) {
+                            <span class="blurb">{{ row.blurb }}</span>
                           } @else {
                             <span class="skeleton" aria-hidden="true"></span>
                           }
@@ -187,10 +194,23 @@ const FOCUSABLE =
                     </li>
                   }
                 </ul>
+                @if (section.category === 'constellations' && !searching()) {
+                  <button type="button" class="show-all" (click)="toggleAllConstellations()">
+                    {{ showAllConstellations() ? 'Show fewer' : 'Show all ' + constellationCount }}
+                  </button>
+                }
               </section>
             } @empty {
               <p class="none">Nothing in the sky matches that.</p>
             }
+            <p class="credits">
+              Star map from
+              <a href="https://github.com/ofrohn/d3-celestial" target="_blank" rel="noopener"
+                >d3-celestial</a
+              >
+              (BSD-3-Clause,
+              <a href="/data/LICENSE-d3-celestial.txt" target="_blank" rel="noopener">notice</a>).
+            </p>
           </div>
         }
       </div>
@@ -395,8 +415,12 @@ const FOCUSABLE =
       font-size: 0.7rem;
       opacity: 0.45;
     }
-    .status {
+    .status,
+    .blurb {
       font-size: 0.82rem;
+    }
+    .blurb {
+      color: #9a968c;
     }
     .status.good {
       color: #9fd8a8;
@@ -417,6 +441,31 @@ const FOCUSABLE =
     .check {
       flex: none;
       font-size: 1.1rem;
+    }
+    .show-all {
+      min-height: 48px;
+      width: 100%;
+      margin-top: 0.2rem;
+      font: inherit;
+      font-size: 0.85rem;
+      color: inherit;
+      opacity: 0.8;
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+    .show-all:focus-visible {
+      outline: 2px solid #e9e6dc;
+      outline-offset: 2px;
+    }
+    .credits {
+      margin: 1rem 0 0;
+      font-size: 0.7rem;
+      opacity: 0.4;
+      text-align: center;
+    }
+    .credits a {
+      color: inherit;
     }
     .none {
       opacity: 0.6;
@@ -467,6 +516,7 @@ export class TargetPicker {
   private readonly availability = inject(AvailabilityService);
   private readonly stats = inject(StatsService);
   private readonly gp = inject(GpService);
+  private readonly sky = inject(SkyDataService);
   private readonly analytics = inject(AnalyticsService);
   private readonly info = inject(TargetInfoService);
   private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('sheet');
@@ -475,6 +525,9 @@ export class TargetPicker {
   protected readonly pendingSun = signal(false);
   protected readonly dragOffset = signal(0);
   protected readonly sunWarning = SUN_SAFETY_BANNER;
+  protected readonly showAllConstellations = signal(false);
+  protected readonly constellationCount = ALL_TARGETS.filter((t) => t.category === 'constellations')
+    .length;
   protected readonly glyph = targetGlyph;
 
   private dragStartY: number | null = null;
@@ -498,13 +551,19 @@ export class TargetPicker {
     const perTarget = this.stats.stats().perTarget;
     const selectedId = this.selection.selectedId();
     const now = this.now();
+    const showAll = this.showAllConstellations();
+    const mapLoaded = this.sky.geometry() !== null;
     return SECTIONS.map((s) => ({
       category: s.category,
       title: s.title,
-      rows: TARGETS.filter((t) => t.category === s.category)
+      rows: ALL_TARGETS.filter((t) => t.category === s.category)
+        .filter((t) => q || showAll || (t.constellation?.rank ?? PROMINENT_RANK) === PROMINENT_RANK)
         .filter(
           (t) =>
-            !q || [t.name, t.shortName, t.id].some((field) => normalizeSearch(field).includes(q)),
+            !q ||
+            [t.name, t.shortName, t.id, t.constellation?.english, t.constellation?.iau].some(
+              (field) => !!field && normalizeSearch(field).includes(q),
+            ),
         )
         .map((def) => {
           const a = byId[def.id];
@@ -513,6 +572,8 @@ export class TargetPicker {
             def,
             status,
             warn: status?.warn ?? def.kind === 'sun',
+            // A constellation's status needs the star map, which only Look Around or choosing one loads.
+            blurb: !status && def.kind === 'constellation' && !mapLoaded ? def.blurb : null,
             finds: perTarget[def.id]?.finds ?? 0,
             selected: def.id === selectedId,
             color: def.planet?.color ?? null,
@@ -521,12 +582,32 @@ export class TargetPicker {
     })).filter((s) => s.rows.length > 0);
   });
 
+  /** The shown constellations beyond the prominent 22 (Show all, or a search): the picker asks for their status too. */
+  private readonly extraConstellations = computed<TargetDef[]>(() =>
+    this.sections()
+      .filter((s) => s.category === 'constellations')
+      .flatMap((s) => s.rows.map((r) => r.def))
+      .filter((d) => d.constellation?.rank !== PROMINENT_RANK),
+  );
+
   /** True while the Satellites section is on screen (open, and not filtered out by the search). */
+  private constellationObserver: IntersectionObserver | null = null;
+  private observedSection: Element | null = null;
+
   private readonly satellitesShown = computed(
     () => this.open() && this.sections().some((s) => s.category === 'satellites'),
   );
 
   constructor() {
+    // The star map is fetched the first time the Constellations section scrolls into view (never when
+    // the sheet merely opens: the section is usually below the fold). Without IntersectionObserver
+    // nothing is fetched here; selecting a constellation or Look Around still loads it.
+    effect(() => {
+      const sheet = this.sheetRef()?.nativeElement;
+      this.sections();
+      untracked(() => this.observeConstellations(sheet));
+    });
+    inject(DestroyRef).onDestroy(() => this.stopObserving());
     // The first time the Satellites section renders, ask for orbit data (never earlier).
     effect(() => {
       if (this.satellitesShown()) untracked(() => void this.gp.get());
@@ -534,7 +615,14 @@ export class TargetPicker {
     // Orbit data arriving (or failing) while the sheet is open: fill in the satellite rows.
     effect(() => {
       this.gp.stamp();
-      if (this.open()) untracked(() => void this.availability.refreshAll());
+      if (this.open())
+        untracked(() => void this.availability.refreshAll(this.extraConstellations()));
+    });
+    // The star map arriving, or more constellation rows being shown: fill in their status.
+    effect(() => {
+      this.sky.geometry();
+      const extra = this.extraConstellations();
+      if (this.open()) untracked(() => void this.availability.refreshAll(extra));
     });
     // On open: remember what had focus, compute availability (instantly showing skeletons), focus the
     // sheet. On close: give focus back.
@@ -544,7 +632,7 @@ export class TargetPicker {
           this.returnFocusTo = document.activeElement;
           this.now.set(new Date());
           this.pendingSun.set(false);
-          void this.availability.refreshAll();
+          void this.availability.refreshAll(this.extraConstellations());
           setTimeout(() => this.sheetRef()?.nativeElement.focus(), 0);
         });
       } else {
@@ -566,6 +654,30 @@ export class TargetPicker {
       return;
     }
     this.apply(def.id, from);
+  }
+
+  private observeConstellations(sheet: HTMLElement | undefined): void {
+    const section = sheet?.querySelector('section[data-category="constellations"]') ?? null;
+    if (section === this.observedSection) return;
+    this.stopObserving();
+    if (!section || this.sky.geometry() || typeof IntersectionObserver === 'undefined') return;
+    this.observedSection = section;
+    this.constellationObserver = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      this.stopObserving();
+      void this.sky.load();
+    });
+    this.constellationObserver.observe(section);
+  }
+
+  private stopObserving(): void {
+    this.constellationObserver?.disconnect();
+    this.constellationObserver = null;
+    this.observedSection = null;
+  }
+
+  protected toggleAllConstellations(): void {
+    this.showAllConstellations.update((v) => !v);
   }
 
   /** Enter Look Around: every target at once, no finding. */

@@ -14,7 +14,8 @@ export type LabelAnchor =
   | 'above-right'
   | 'above-left'
   | 'below-right'
-  | 'below-left';
+  | 'below-left'
+  | 'center';
 
 /** One target's marker and the size of its label text. */
 export interface LabelRequest {
@@ -30,6 +31,13 @@ export interface LabelRequest {
   aboveHorizon: boolean;
   /** Brighter (smaller) first; null (not meaningful) last. */
   magnitude: number | null;
+  /**
+   * Lower tiers are placed first and win any clash (default 0: every target). Constellation names are
+   * tiers 1-3 by rank, so they only ever take space the targets left over.
+   */
+  tier?: number;
+  /** Only try the label centered on its point (a constellation name has no marker to sit beside). */
+  centered?: boolean;
 }
 
 export interface LabelPlacement {
@@ -76,6 +84,8 @@ function candidate(r: LabelRequest, anchor: LabelAnchor, w: number, h: number): 
       return { x: r.x + d, y: r.y + d, w, h };
     case 'below-left':
       return { x: r.x - d - w, y: r.y + d, w, h };
+    case 'center':
+      return { x: r.x - w / 2, y: r.y - h / 2, w, h };
   }
 }
 
@@ -87,8 +97,13 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
 const inside = (b: Rect, vw: number, vh: number) =>
   b.x >= 0 && b.y >= 0 && b.x + b.w <= vw && b.y + b.h <= vh;
 
-/** Higher priority sorts first: above the horizon, then brightest, null magnitude last, then input order. */
+const CENTER_ONLY: readonly LabelAnchor[] = ['center'];
+
+/** Higher priority sorts first: lower tier, then above the horizon, then brightest, null magnitude last, then input order. */
 function byPriority(a: { r: LabelRequest; i: number }, b: { r: LabelRequest; i: number }): number {
+  const ta = a.r.tier ?? 0;
+  const tb = b.r.tier ?? 0;
+  if (ta !== tb) return ta - tb;
   if (a.r.aboveHorizon !== b.r.aboveHorizon) return a.r.aboveHorizon ? -1 : 1;
   const ma = a.r.magnitude ?? Infinity;
   const mb = b.r.magnitude ?? Infinity;
@@ -109,12 +124,17 @@ export function layoutLabels(
   requests: readonly LabelRequest[],
   viewport: { width: number; height: number },
 ): LabelPlacement[] {
-  const markers: Rect[] = requests.map((r) => ({
-    x: r.x - r.markerRadius,
-    y: r.y - r.markerRadius,
-    w: r.markerRadius * 2,
-    h: r.markerRadius * 2,
-  }));
+  // A request with no marker (a constellation name) is just a point to center on: it blocks nothing.
+  const markers: (Rect | null)[] = requests.map((r) =>
+    r.markerRadius > 0
+      ? {
+          x: r.x - r.markerRadius,
+          y: r.y - r.markerRadius,
+          w: r.markerRadius * 2,
+          h: r.markerRadius * 2,
+        }
+      : null,
+  );
   const placed: Rect[] = [];
   const result: LabelPlacement[] = requests.map((r) => ({ id: r.id, box: null, anchor: null }));
 
@@ -122,11 +142,11 @@ export function layoutLabels(
   for (const { r, i } of order) {
     const w = r.textWidth + 2 * LABEL_PADDING;
     const h = r.textHeight + 2 * LABEL_PADDING;
-    for (const anchor of ANCHORS) {
+    for (const anchor of r.centered ? CENTER_ONLY : ANCHORS) {
       const box = candidate(r, anchor, w, h);
       if (!inside(box, viewport.width, viewport.height)) continue;
       if (placed.some((p) => rectsOverlap(box, p))) continue;
-      if (markers.some((m, j) => j !== i && rectsOverlap(box, m))) continue;
+      if (markers.some((m, j) => m !== null && j !== i && rectsOverlap(box, m))) continue;
       placed.push(box);
       result[i] = { id: r.id, box, anchor };
       break;

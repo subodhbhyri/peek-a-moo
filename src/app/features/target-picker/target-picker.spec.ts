@@ -5,7 +5,7 @@ import { ANALYTICS_SINK } from '../../core/analytics/analytics.service';
 import { StatsService } from '../../core/personality/stats.service';
 import type { Availability } from '../../core/targets/availability';
 import { AvailabilityService } from '../../core/targets/availability.service';
-import { TARGETS } from '../../core/targets/catalog';
+import { ALL_TARGETS, TARGETS } from '../../core/targets/catalog';
 import { LocationService } from '../../core/sensors/location.service';
 import { TargetSelectionService } from '../../core/targets/target-selection.service';
 import { TargetPicker, normalizeSearch } from './target-picker';
@@ -100,17 +100,21 @@ describe('TargetPicker', () => {
     expect(d.getAttribute('aria-label')).toBe('Pick something to find');
   });
 
-  it('lists Solar system, Stars, Deep sky in order, with every catalog target in catalog order', async () => {
+  it('lists Solar system, Stars, Deep sky, Satellites, Constellations in order, in catalog order', async () => {
     create();
     await settle();
     expect(
       qa('h3')
         .map((h) => h.textContent!.trim())
         .filter((t) => t !== 'Best right now'),
-    ).toEqual(['Solar system', 'Stars', 'Deep sky', 'Satellites']);
-    // Within a section the order is the catalog's, not re-sorted by availability.
-    const expected = ['solar-system', 'stars', 'deep-sky', 'satellites'].flatMap((c) =>
-      TARGETS.filter((t) => t.category === c).map((t) => t.name),
+    ).toEqual(['Solar system', 'Stars', 'Deep sky', 'Satellites', 'Constellations']);
+    // Within a section the order is the catalog's, not re-sorted by availability. Constellations show
+    // just the 22 prominent ones until "Show all" (Phase 10).
+    const expected = ['solar-system', 'stars', 'deep-sky', 'satellites', 'constellations'].flatMap(
+      (c) =>
+        ALL_TARGETS.filter(
+          (t) => t.category === c && (c !== 'constellations' || t.constellation?.rank === 1),
+        ).map((t) => t.name),
     );
     expect(rowNames()).toEqual(expected);
   });
@@ -142,18 +146,20 @@ describe('TargetPicker', () => {
       fixture.detectChanges();
     };
     type('ANDRÔMEDA');
-    expect(rowNames()).toEqual(['Andromeda Galaxy']);
+    // The galaxy, and (Phase 10) the constellation it is in.
+    expect(rowNames()).toEqual(['Andromeda Galaxy', 'Andromeda']);
     type('lmc');
     expect(rowNames()).toEqual(['Large Magellanic Cloud']);
     type('m45');
     expect(rowNames()).toEqual(['Pleiades']);
     type('orion');
-    expect(rowNames()).toEqual(['Orion Nebula']);
+    expect(rowNames()).toEqual(['Orion Nebula', 'Orion']); // and, since Phase 10, the constellation
     type('zzzz');
     expect(rowNames()).toEqual([]);
     expect(q('.none')).not.toBeNull();
     type('');
-    expect(rowNames()).toHaveLength(TARGETS.length);
+    // The 22 targets plus the 22 prominent constellations (Phase 10).
+    expect(rowNames()).toHaveLength(TARGETS.length + 22);
   });
 
   it('choosing a row selects the target, closes the sheet and clears the search', async () => {
@@ -209,7 +215,10 @@ describe('TargetPicker', () => {
   it('keeps Tab inside the dialog', () => {
     create();
     vi.advanceTimersByTime(10);
-    const focusables = qa('[role=dialog] button:not([tabindex="-1"]), [role=dialog] input');
+    // The last stop is the credits link at the bottom of the list (Phase 10).
+    const focusables = qa(
+      '[role=dialog] button:not([tabindex="-1"]), [role=dialog] input, [role=dialog] a[href]',
+    );
     const last = focusables[focusables.length - 1];
     last.focus();
     const ev = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });

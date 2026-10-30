@@ -178,8 +178,9 @@ describe('CityPicker', () => {
     );
     fixture = TestBed.createComponent(CityPicker);
     fixture.detectChanges();
-    await fixture.whenStable();
-    await new Promise((r) => setTimeout(r, 0));
+    // Wait for the real condition (the failed fetch has been handled) rather than for Angular's
+    // pending-task tracking, which made this one test hang for the full 5 s on a loaded 2-core machine.
+    await vi.waitFor(() => expect(TestBed.inject(CityService).status()).toBe('fallback'));
     fixture.detectChanges();
     search('abu dhabi');
     expect(qa('li button').map((b) => b.textContent!.trim())).toEqual(['Abu Dhabi, UAE']);

@@ -132,6 +132,18 @@ export function liveStats(
     out.push(...satelliteStats(def, state, now, locale, opts.elements));
   }
 
+  if (def.kind === 'constellation') {
+    out.push({
+      label: 'Right now',
+      value:
+        state.altitudeDeg > 0
+          ? 'Up from here'
+          : state.constellation?.partlyUp
+            ? 'Partly up'
+            : 'Below the horizon',
+    });
+    return out;
+  }
   out.push(upFromHere(state, locale));
   return out;
 }

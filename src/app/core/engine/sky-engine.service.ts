@@ -13,6 +13,9 @@ import {
 import { northCelestialPole, skyNorthScreenAngle } from '../projection/sky-orientation';
 import { LocationService } from '../sensors/location.service';
 import { OrientationService } from '../sensors/orientation.service';
+import { SkyDataService } from '../sky/sky-data.service';
+import type { SkyField } from '../sky/sky-field';
+import { SkyDataError } from '../targets/providers/constellation';
 import { recomputeIntervalMs } from '../targets/cadence';
 import { computeTargetState } from '../targets/compute';
 import { SatelliteDataError } from '../targets/providers/satellite';
@@ -44,6 +47,8 @@ export interface SkyFrame {
   skyNorthRad: number;
   /** Satellites only: screen positions (CSS px) of the trail points, newest first. Absent for everything else. */
   trail?: { x: number; y: number }[];
+  /** Constellations only: the star map, projected with this frame's camera (background stars and the figure). */
+  sky?: SkyField;
   phase: FindPhase;
   /** ms since the current search started (drive the "glow on nearest edge" hint off this). */
   searchElapsedMs: number;
@@ -67,9 +72,14 @@ export interface LookFrame {
   viewport: Viewport;
   basis: CameraBasis;
   items: LookItem[];
+  /** The star map projected with this frame's camera; absent until it has loaded (or if it could not). */
+  sky?: SkyField;
+  /** Draw the constellation figures and names (the background stars are always drawn). */
+  constellationsOn?: boolean;
 }
 
 const MODE_STORAGE_KEY = 'ptm.mode';
+const CONSTELLATIONS_STORAGE_KEY = 'ptm.constellations';
 /** Sun within this many degrees of the screen center shows the Sun safety banner in Look Around. */
 export const SUN_NEAR_CENTER_DEG = 30;
 
@@ -94,6 +104,15 @@ function initialMode(): { mode: EngineMode; source: 'link' | 'restored' | null }
   return { mode: 'find', source: null };
 }
 
+/** Constellation figures are on unless the user turned them off. */
+function readConstellationsOn(): boolean {
+  try {
+    return localStorage.getItem(CONSTELLATIONS_STORAGE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
 /** A tracker event, tagged with the target it happened for. */
 export type TargetFindEvent = FindEvent & { targetId: string };
 
@@ -108,6 +127,7 @@ export class SkyEngineService {
   private readonly orientation = inject(OrientationService);
   private readonly selection = inject(TargetSelectionService);
   private readonly gp = inject(GpService);
+  private readonly sky = inject(SkyDataService);
 
   /** State of the selected target; null until a location is known, and briefly after a selection change. */
   readonly target = signal<TargetState | null>(null);
@@ -115,7 +135,7 @@ export class SkyEngineService {
    * Why the selected satellite has no position, if it has none: its orbit data is not loaded yet
    * ('no-elements') or SGP4 gave up on it ('propagation-failed'). null for everything else.
    */
-  readonly targetError = signal<SatelliteDataError['code'] | null>(null);
+  readonly targetError = signal<SatelliteDataError['code'] | SkyDataError['code'] | null>(null);
   /** found / lost events. The personality + stats layer subscribes to this. */
   readonly events$ = new Subject<TargetFindEvent>();
 
@@ -126,6 +146,9 @@ export class SkyEngineService {
   readonly initialLookSource: 'link' | 'restored' | null = this.initial.source;
   /** Look Around: the Sun is within SUN_NEAR_CENTER_DEG of the screen center. */
   readonly lookSunNearCenter = signal(false);
+
+  /** Look Around: draw the constellation figures and names. Persisted; on by default. */
+  readonly constellationsOn = signal(readConstellationsOn());
 
   /** True while the user is lining up the real target (align mode): no find tracking, events or stats. */
   readonly trackerPaused = signal(false);
@@ -145,9 +168,12 @@ export class SkyEngineService {
       const def = this.selection.selected();
       // Orbit data arriving (or being refreshed) must recompute a satellite.
       this.gp.elements();
+      this.sky.geometry();
       untracked(() => {
         // The only way the app asks for orbit data: a satellite is selected.
         if (def.kind === 'satellite') void this.gp.get();
+        // The only ways the app asks for the star map: a constellation is selected, or Look Around starts.
+        if (def.kind === 'constellation') void this.sky.load();
         if (this.activeId !== null && this.activeId !== def.id) {
           // Selection changed: drop the old target's state, tracker and search timer.
           this.target.set(null);
@@ -196,12 +222,23 @@ export class SkyEngineService {
     }
   }
 
+  /** Show or hide the constellation figures and names in Look Around, and remember the choice. */
+  setConstellations(on: boolean): void {
+    this.constellationsOn.set(on);
+    try {
+      localStorage.setItem(CONSTELLATIONS_STORAGE_KEY, on ? 'on' : 'off');
+    } catch {
+      // storage unavailable: the choice still applies this session
+    }
+  }
+
   private enterLook(): void {
     this.setTrackerPaused(true);
     this.lookStates.clear();
     this.lookComputedAt.clear();
     // A user action, so fetching orbit data is allowed; until it arrives satellites are simply absent.
     void this.gp.get();
+    void this.sky.load();
   }
 
   /**
@@ -217,6 +254,11 @@ export class SkyEngineService {
     const date = new Date();
     const items: LookItem[] = [];
     let sunNear = false;
+    const field = this.sky.field();
+    if (field) {
+      field.update(date, pos);
+      field.project(basis, viewport);
+    }
     for (const def of TARGETS) {
       const interval = recomputeIntervalMs(def.kind);
       const last = this.lookComputedAt.get(def.id);
@@ -240,7 +282,12 @@ export class SkyEngineService {
       items.push({ def, state, projection, aboveHorizon: state.altitudeDeg > 0 });
     }
     if (sunNear !== this.lookSunNearCenter()) this.lookSunNearCenter.set(sunNear);
-    return { viewport, basis, items };
+    return {
+      viewport,
+      basis,
+      items,
+      ...(field && { sky: field, constellationsOn: this.constellationsOn() }),
+    };
   }
 
   /**
@@ -271,10 +318,20 @@ export class SkyEngineService {
     if (!pos) return null;
     const def = this.selection.selected();
     try {
-      const state = computeTargetState(def, date, pos, this.gp.elements() ?? undefined);
+      const state = computeTargetState(
+        def,
+        date,
+        pos,
+        this.gp.elements() ?? undefined,
+        this.sky.geometry() ?? undefined,
+      );
       this.targetError.set(null);
       return state;
     } catch (e) {
+      if (e instanceof SkyDataError) {
+        this.targetError.set(e.code);
+        return null;
+      }
       if (e instanceof SatelliteDataError) {
         this.targetError.set(e.code);
         return null;
@@ -298,6 +355,16 @@ export class SkyEngineService {
       ? brightLimbScreenAngle(target.direction, target.sunDirection, basis)
       : null;
 
+    let sky: SkyField | undefined;
+    if (def.kind === 'constellation') {
+      sky = this.sky.field() ?? undefined;
+      const pos = this.location.position();
+      if (sky && pos) {
+        sky.update(new Date(), pos);
+        sky.project(basis, viewport);
+      }
+    }
+
     const trail = target.satellite
       ? target.satellite.trail.map((d) => {
           const p = projectDirection(d, basis, viewport, 0);
@@ -319,6 +386,7 @@ export class SkyEngineService {
         findCount: 0,
         lastFindDurationMs: null,
         ...(trail && { trail }),
+        ...(sky && { sky }),
       };
     }
     this.tracker ??= initialTrackerState(now);
@@ -346,6 +414,7 @@ export class SkyEngineService {
       findCount: state.findCount,
       lastFindDurationMs: state.lastFindDurationMs,
       ...(trail && { trail }),
+      ...(sky && { sky }),
     };
   }
 

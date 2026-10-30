@@ -18,6 +18,7 @@ import {
   targetFoundToast,
 } from '../../core/personality/target-lines';
 import { AnalyticsService } from '../../core/analytics/analytics.service';
+import { constellationFoundLine } from '../../core/personality/constellation-lines';
 import { AlignmentService } from '../../core/calibration/alignment.service';
 import {
   FindLineContext,
@@ -293,18 +294,22 @@ export class SkyView implements AfterViewInit {
     } else {
       // No face for anything but the Moon: a line from the target's own pack, plus the toast.
       const def = this.selection.selected();
-      const line = selectTargetLine(
-        def,
-        {
-          targetFinds: updated.perTarget[targetId]?.finds ?? 1,
-          sessionFindIndex: findIndex,
-          durationMs,
-          altitudeDeg: target.altitudeDeg,
-          magnitude: target.magnitude,
-          sunlit: target.satellite?.sunlit,
-        },
-        this.stats.stats().recentLines,
-      );
+      // A constellation has no pack of lines: one short line each (rank 1) or just "Found {Latin}.".
+      const line =
+        def.kind === 'constellation'
+          ? { text: constellationFoundLine(def) }
+          : selectTargetLine(
+              def,
+              {
+                targetFinds: updated.perTarget[targetId]?.finds ?? 1,
+                sessionFindIndex: findIndex,
+                durationMs,
+                altitudeDeg: target.altitudeDeg,
+                magnitude: target.magnitude,
+                sunlit: target.satellite?.sunlit,
+              },
+              this.stats.stats().recentLines,
+            );
       if (line) {
         this.stats.recordLineShown(line.text);
         this.showFoundLine(line.text);
@@ -328,6 +333,8 @@ export class SkyView implements AfterViewInit {
     kind: string,
     target: NonNullable<ReturnType<SkyEngineService['currentTarget']>>,
   ): string | undefined {
+    // A constellation is a pattern of stars, not a faint object: nothing to apologise for.
+    if (kind === 'constellation') return undefined;
     if (kind === 'satellite' && target.satellite) {
       return satelliteFoundNote(target.satellite.sunlit, target.sunAltitudeDeg) ?? undefined;
     }
@@ -397,12 +404,19 @@ export class SkyView implements AfterViewInit {
     this.lookHits = result.hits;
     if (now - this.lookNamesAt >= 2000) {
       this.lookNamesAt = now;
-      const text = result.onScreen.length
-        ? 'On screen: ' +
-          result.onScreen
-            .map((o) => (o.aboveHorizon ? o.name : `${o.name} (below the horizon)`))
-            .join(', ')
-        : null;
+      const parts: string[] = [];
+      if (result.onScreen.length) {
+        parts.push(
+          'On screen: ' +
+            result.onScreen
+              .map((o) => (o.aboveHorizon ? o.name : `${o.name} (below the horizon)`))
+              .join(', '),
+        );
+      }
+      if (result.constellations.length) {
+        parts.push('Constellations: ' + result.constellations.join(', '));
+      }
+      const text = parts.length ? parts.join('. ') : null;
       if (text !== this.lookNames()) this.lookNames.set(text);
     }
   }

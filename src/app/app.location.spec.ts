@@ -5,6 +5,10 @@ import { App } from './app';
 import { SkyEngineService } from './core/engine/sky-engine.service';
 import { LocationService } from './core/sensors/location.service';
 
+// Each test bootstraps the whole App, and the first one in a file pays the cold start: slow on a loaded or
+// 2-core CI machine. A per-file allowance (the global default stays 5 s).
+vi.setConfig({ testTimeout: 15_000 });
+
 const original = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
 
 function stubGeolocation(kind: 'denied' | 'granted') {

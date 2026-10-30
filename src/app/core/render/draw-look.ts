@@ -1,7 +1,9 @@
 import type { LookFrame } from '../engine/sky-engine.service';
 import { clamp, directionFromAzAlt } from '../math/vec3';
 import { projectDirection } from '../projection/projection';
+import { CONSTELLATION_TARGETS } from '../targets/constellation-targets';
 import type { TargetDef } from '../targets/target.types';
+import { drawBackgroundStars, drawConstellationLines } from './draw-sky';
 import { bvToColor } from './draw-star';
 import { LABEL_PADDING, LabelRequest, Rect, layoutLabels } from './label-layout';
 
@@ -43,6 +45,39 @@ export interface LookOnScreen {
 export interface LookDrawResult {
   hits: LookHit[];
   onScreen: LookOnScreen[];
+  /** Latin names of the constellations whose name point is on screen (empty when they are switched off). */
+  constellations: string[];
+}
+
+const CONSTELLATION_FONT = '600 10px system-ui, sans-serif';
+const CONSTELLATION_SPACING_PX = 2;
+const CONSTELLATION_INK = 'rgba(233, 230, 220, 0.6)';
+const CONSTELLATION_LATIN = new Map(CONSTELLATION_TARGETS.map((t) => [t.id, t.name]));
+
+type SpacedContext = CanvasRenderingContext2D & { letterSpacing?: string };
+
+/** Letter-spaced capitals, where the canvas supports letterSpacing (all current browsers); plain otherwise. */
+function setConstellationFont(ctx: CanvasRenderingContext2D): void {
+  ctx.font = CONSTELLATION_FONT;
+  if ('letterSpacing' in ctx)
+    (ctx as SpacedContext).letterSpacing = `${CONSTELLATION_SPACING_PX}px`;
+}
+
+function resetLetterSpacing(ctx: CanvasRenderingContext2D): void {
+  if ('letterSpacing' in ctx) (ctx as SpacedContext).letterSpacing = '0px';
+}
+
+const constellationWidthCache = new Map<string, number>();
+
+function constellationTextWidth(ctx: CanvasRenderingContext2D, text: string): number {
+  const cached = constellationWidthCache.get(text);
+  if (cached !== undefined) return cached;
+  setConstellationFont(ctx);
+  const w = ctx.measureText(text).width;
+  resetLetterSpacing(ctx);
+  const width = typeof w === 'number' && Number.isFinite(w) ? w : text.length * 8;
+  constellationWidthCache.set(text, width);
+  return width;
 }
 
 const widthCache = new Map<string, number>();
@@ -154,6 +189,11 @@ function drawHorizon(ctx: CanvasRenderingContext2D, frame: LookFrame): void {
 export function drawLook(ctx: CanvasRenderingContext2D, frame: LookFrame): LookDrawResult {
   const { viewport } = frame;
   drawHorizon(ctx, frame);
+  const sky = frame.sky;
+  const showFigures = !!sky && frame.constellationsOn === true;
+  // Draw order: horizon, constellation lines, background stars, then the targets and all the names.
+  if (sky && showFigures) drawConstellationLines(ctx, sky, viewport);
+  if (sky) drawBackgroundStars(ctx, sky, viewport);
 
   const visible = frame.items.filter(
     (it) =>
@@ -178,6 +218,31 @@ export function drawLook(ctx: CanvasRenderingContext2D, frame: LookFrame): LookD
       magnitude: it.state.magnitude,
     };
   });
+  // Constellation names go last in the layout (tiers 1-3 by rank) so they only take space targets left.
+  const named: { id: string; text: string; index: number }[] = [];
+  if (sky && showFigures) {
+    for (const c of sky.geometry.constellations) {
+      const p = c.labelIndex;
+      if (sky.pointInFront[p] === 0) continue;
+      const x = sky.pointX[p];
+      const y = sky.pointY[p];
+      if (x < 0 || x > viewport.width || y < 0 || y > viewport.height) continue;
+      const text = (CONSTELLATION_LATIN.get(c.id) ?? c.id).toUpperCase();
+      named.push({ id: c.id, text, index: requests.length });
+      requests.push({
+        id: c.id,
+        x,
+        y,
+        markerRadius: 0,
+        textWidth: constellationTextWidth(ctx, text),
+        textHeight: 11,
+        aboveHorizon: sky.pointEnu[p * 3 + 2] > 0,
+        magnitude: null,
+        tier: c.rank,
+        centered: true,
+      });
+    }
+  }
   const placements = layoutLabels(requests, viewport);
 
   ctx.font = LABEL_FONT;
@@ -214,6 +279,26 @@ export function drawLook(ctx: CanvasRenderingContext2D, frame: LookFrame): LookD
     });
   });
 
+  // Names last, dimmer than the targets' and never over them.
+  if (named.length > 0) {
+    setConstellationFont(ctx);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3;
+    for (const n of named) {
+      const box = placements[n.index].box;
+      if (!box) continue;
+      const above = requests[n.index].aboveHorizon;
+      ctx.globalAlpha = above ? 1 : 0.6;
+      ctx.strokeStyle = HALO;
+      ctx.strokeText(n.text, box.x + box.w / 2, box.y + box.h / 2);
+      ctx.fillStyle = CONSTELLATION_INK;
+      ctx.fillText(n.text, box.x + box.w / 2, box.y + box.h / 2);
+    }
+    ctx.globalAlpha = 1;
+    resetLetterSpacing(ctx);
+  }
+
   return {
     hits,
     onScreen: visible.map((it) => ({
@@ -221,6 +306,7 @@ export function drawLook(ctx: CanvasRenderingContext2D, frame: LookFrame): LookD
       name: it.def.kind === 'sun' ? 'Sun' : it.def.shortName,
       aboveHorizon: it.aboveHorizon,
     })),
+    constellations: named.map((n) => CONSTELLATION_LATIN.get(n.id) ?? n.id),
   };
 }
 

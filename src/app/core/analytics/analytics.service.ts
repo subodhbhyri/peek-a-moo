@@ -29,6 +29,8 @@ export interface AnalyticsEvents {
   sensor_mode: { mode: SensorMode };
   look_around_opened: { from: LookAroundSource };
   target_info_opened: { target: string; from: InfoSource };
+  night_mode_toggled: { on: boolean };
+  constellations_toggled: { on: boolean };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;
@@ -103,6 +105,14 @@ export class AnalyticsService {
 
   targetInfoOpened(target: string, from: InfoSource): void {
     this.send('target_info_opened', { target, from });
+  }
+
+  nightModeToggled(on: boolean): void {
+    this.send('night_mode_toggled', { on });
+  }
+
+  constellationsToggled(on: boolean): void {
+    this.send('constellations_toggled', { on });
   }
 
   sensorMode(mode: SensorMode): void {

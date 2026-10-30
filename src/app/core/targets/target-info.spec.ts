@@ -1,4 +1,4 @@
-import { TARGETS } from './catalog';
+import { ALL_TARGETS, TARGETS } from './catalog';
 
 /** docs/phases/phase8.md: the distances for fixed-sky targets, used exactly. */
 const DISTANCE_TABLE: Record<string, number> = {
@@ -15,13 +15,15 @@ const DISTANCE_TABLE: Record<string, number> = {
 };
 
 describe('target info content', () => {
-  it('every target has a type, a description of at most 220 characters and exactly 3 facts of at most 120', () => {
-    for (const t of TARGETS) {
+  it('every target has a type, a description of at most 220 characters and exactly 3 facts of at most 120 (none for constellations of rank 2-3)', () => {
+    for (const t of ALL_TARGETS) {
       expect(t.info, t.id).toBeDefined();
       expect(t.info.type.trim(), `${t.id} type`).not.toBe('');
       expect(t.info.description.trim().length, `${t.id} description`).toBeGreaterThan(0);
       expect(t.info.description.length, `${t.id} description`).toBeLessThanOrEqual(220);
-      expect(t.info.facts, `${t.id} facts`).toHaveLength(3);
+      // Phase 10: the 66 less prominent constellations (rank 2-3) have a description but no facts list.
+      const expectedFacts = t.kind === 'constellation' && t.constellation!.rank !== 1 ? 0 : 3;
+      expect(t.info.facts, `${t.id} facts`).toHaveLength(expectedFacts);
       for (const f of t.info.facts) {
         expect(f.trim().length, `${t.id}: ${f}`).toBeGreaterThan(0);
         expect(f.length, `${t.id}: ${f}`).toBeLessThanOrEqual(120);
@@ -46,7 +48,7 @@ describe('target info content', () => {
 
   it('no fact appears twice, anywhere', () => {
     const seen = new Map<string, string>();
-    for (const t of TARGETS) {
+    for (const t of ALL_TARGETS) {
       for (const f of t.info.facts) {
         expect(seen.has(f), `"${f}" in ${t.id} and ${seen.get(f)}`).toBe(false);
         seen.set(f, t.id);
@@ -62,7 +64,7 @@ describe('target info content', () => {
   });
 
   it('states nothing time-sensitive: no "currently", crew counts or end dates', () => {
-    for (const t of TARGETS) {
+    for (const t of ALL_TARGETS) {
       const text = [t.info.description, ...t.info.facts].join(' ');
       expect(text, t.id).not.toMatch(/\b(currently|these days|as of|nowadays|this year)\b/i);
       expect(text, t.id).not.toMatch(/\b(crew of|astronauts? (are|is) )/i);
