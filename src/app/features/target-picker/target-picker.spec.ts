@@ -35,7 +35,6 @@ describe('TargetPicker', () => {
   async function settle() {
     await vi.runAllTimersAsync();
     fixture.detectChanges();
-    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -399,6 +398,9 @@ describe('TargetPicker', () => {
       create(false);
       await settle();
       expect(gpCalls()).toHaveLength(0);
+      // The precondition for "asks for orbit data" is that nothing is stored when the sheet opens. A
+      // slow response from an earlier test can land in localStorage after that test ended, so say so here.
+      localStorage.clear();
       setOpen(true);
       await settle();
       expect(gpCalls()).toHaveLength(1);

@@ -189,3 +189,35 @@ CI (GitHub Actions, about 2 cores) failed two tests that passed locally: "select
 - Not changed: other specs still use `fixture.whenStable()` in their `settle()` (`app.look`, `app.location`, `app.intro`, `app.analytics`, `sun-safety`, `target-picker*`). They passed every run, so I did not rewrite them, but `whenStable()` is the common thread in both hangs I saw; if one of them flakes on CI, that call is the first suspect.
 
 **Verification.** Format, lint, `ng test` and `ng build` pass (71 files, 718 tests; main bundle 138.10 KB gzipped; no warnings). Full suite pinned to 2 CPUs, five runs: **5 of 5 clean**, 36–45 s each (plus two unrestricted runs, also clean). Before the last two changes, one pinned run and one unrestricted run each failed once, which is what led to the `whenStable()` removal and the cheaper picker test above.
+
+## Follow-up 3: sweeping the remaining `whenStable()` specs
+
+Status: done. Format, lint, `ng test` (71 files, 718 tests), `ng build` (no warnings, main bundle 138.10 KB gzipped) pass, and the full suite pinned to 2 CPUs passed **5 of 5** (36-40 s each). Three spec files changed (`app.location.spec.ts`, `target-picker.spec.ts`, `target-picker.constellations.spec.ts`). One part of the request did not work out as asked; see "What I did not do".
+
+### The probe
+
+A temporary setup file (deleted, never committed) wrapped `vi.stubGlobal` so every stubbed `fetch` answered **300 ms late in real time**, and wrapped a stubbed `navigator.geolocation` the same way. The mocked call still happens immediately (specs that assert "fetch was called" stay valid); only the response is late, and a rejected response is still delivered late. The wrapper also exposes `.mock`, because one spec reads `fetch.mock.calls`.
+
+Two false starts in the probe are worth knowing, because they looked like test bugs and were not: delaying the *call* instead of the response broke specs that legitimately check the call synchronously, and a mock that rejected before anyone awaited it leaked an unhandled rejection into other tests.
+
+### What it found, and the fix (by waiting on the real condition)
+
+- **`app.location.spec.ts` (6 tests):** `render()` assumed the mocked geolocation had already answered (`status` is `'pending'` until it does). It now `vi.waitFor`s for `LocationService.status()` to leave `'pending'`.
+- **`target-picker.spec.ts` "asks for orbit data the first time it renders":** this was a real isolation weakness, not just a missing wait. With late responses, the *previous* test's orbit-data answer landed in the shared `localStorage` after that test had ended, so this test's `GpService` found a fresh stored copy and (correctly) made no request. The test's actual precondition is "nothing stored when the sheet opens", so it now clears `localStorage` right before opening the sheet and says why.
+- **Passed under the probe, so left alone:** `app.look`, `app.intro`, `app.analytics`, `sun-safety` (their mocked answers are constant 500/404s or are not awaited), `target-picker.constellations`, `target-info*`, `city-picker`, and everything fixed in Follow-up 2. The only other probe failures were timeouts in `location.service.spec` and `sky-data.service.spec`, which `await` their promises correctly: they loop through several 300 ms answers (five in the first) and then run out of 5 s on a loaded machine. That is the probe's own cost, not a missing wait; the specs are unchanged.
+
+### `whenStable()` removed where it is not needed
+
+Removed from the `settle()` helpers of the two **picker specs** (`target-picker.spec.ts`, `target-picker.constellations.spec.ts`). They use fake timers, and `await vi.runAllTimersAsync()` plus change detection already flushes everything; the extra `whenStable()` added nothing. Clean in all five pinned runs and under the probe.
+
+### What I did not do: removing it from the App specs
+
+I also replaced `fixture.whenStable()` in `app.look`, `app.location`, `app.intro` and `app.analytics` with a single macrotask yield, since the probe and normal runs were both green. **That did not hold up under 2-CPU conditions and I reverted it.** Two full pinned runs failed badly: the first had 26 tests (every test in `app.analytics`, `app.intro` and `app.look`) hit the 15 s per-file timeout and took 427 s; the second had 28 timeouts and took 456 s. Run on their own, pinned, the same four files passed 3 of 3 in about 20 s, and unpinned full runs were also green, so the hang only appears with the whole suite loading two cores. I did not find the root cause. My guess, unverified, is that those specs rely on `whenStable()` to wait out the chunked availability timers and the app's other zone-tracked work before the next step, and a bare `setTimeout(0)` does not. Those four files are therefore unchanged except for the geolocation wait above, and `app.satellite`, `app.sky` (already off `whenStable`), `corner-stat` and `sun-safety` were not part of this change.
+
+If you want `whenStable()` gone from the App specs too, the next step is to find out which background work each one is really waiting for and wait on that explicitly. That needs its own investigation, and each failing attempt costs 7+ minutes of CI-like runtime.
+
+### Verification
+
+- Probe: after the fixes, a full run under the 300 ms probe was green (one earlier probe run had only the `location.service` timeout described above).
+- Full suite pinned to 2 CPUs, 5 runs: 71 files / 718 tests passed each time, 36-40 s.
+- Format, lint, test and build all pass.

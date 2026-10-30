@@ -64,8 +64,14 @@ describe('App: location without GPS', () => {
     TestBed.resetTestingModule();
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    // The (mocked) geolocation answers asynchronously, like the real one: wait for the answer itself.
+    await vi.waitFor(
+      () => {
+        fixture.detectChanges();
+        expect(TestBed.inject(LocationService).status()).not.toBe('pending');
+      },
+      { timeout: 10_000, interval: 10 },
+    );
     const el = fixture.nativeElement as HTMLElement;
     const chip = () => el.querySelector<HTMLButtonElement>('.location-control .chip');
     const settle = async () => {

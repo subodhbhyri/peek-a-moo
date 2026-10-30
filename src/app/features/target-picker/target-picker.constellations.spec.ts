@@ -32,7 +32,6 @@ describe('TargetPicker: Constellations (Phase 10)', () => {
   async function settle() {
     await vi.runAllTimersAsync();
     fixture.detectChanges();
-    await fixture.whenStable();
     fixture.detectChanges();
   }
   function create() {
