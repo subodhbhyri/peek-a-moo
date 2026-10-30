@@ -1,0 +1,37 @@
+name: Refresh satellite fallback data
+
+on:
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # One run of the script, no retries: it exits non-zero on any non-200 and the job is allowed to fail.
+      - run: npm run gp:refresh
+
+      - name: Commit the snapshot if it changed
+        run: |
+          if git diff --quiet -- public/data/gp-fallback.json; then
+            echo "gp-fallback.json is unchanged"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/data/gp-fallback.json
+            git commit -m "chore: refresh satellite fallback data"
+            git push
+          fi

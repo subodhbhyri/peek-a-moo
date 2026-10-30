@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { shareMessage, shareUrl } from '../../core/targets/share';
 
 const VISIBLE_MS = 5000;
@@ -80,6 +81,7 @@ export interface FindStat {
   `,
 })
 export class CornerStat {
+  private readonly analytics = inject(AnalyticsService);
   protected readonly payload = signal<FindStat | null>(null);
   protected readonly visible = signal(false);
   protected readonly copied = signal(false);
@@ -106,6 +108,7 @@ export class CornerStat {
     try {
       if (nav.share) {
         await nav.share({ text, url });
+        if (p.targetId) this.analytics.share(p.targetId, 'native');
         return;
       }
     } catch {
@@ -113,6 +116,7 @@ export class CornerStat {
     }
     try {
       await navigator.clipboard.writeText(url ? shareMessage(text, url) : text);
+      if (p.targetId) this.analytics.share(p.targetId, 'clipboard');
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), COPIED_FLASH_MS);
     } catch {

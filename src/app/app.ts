@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { City } from './core/data/cities';
+import { AnalyticsService, SensorMode } from './core/analytics/analytics.service';
 import { GpService } from './core/gp/gp.service';
 import { SUN_CAMERA_NOTE, SUN_SAFETY_BANNER } from './core/personality/target-lines';
 import { AvailabilityService } from './core/targets/availability.service';
@@ -58,6 +59,7 @@ export class App {
   private readonly selection = inject(TargetSelectionService);
   private readonly availability = inject(AvailabilityService);
   private readonly gp = inject(GpService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
 
@@ -134,6 +136,15 @@ export class App {
         this.availability.ensure(def);
       });
     });
+    // How the target was chosen, for the very first one: a shared link, or the default.
+    this.analytics.targetSelected(this.selection.selectedId(), this.selection.initialSource);
+
+    // Which sensor path this device ended up on, once per session.
+    effect(() => {
+      const mode = this.sensorMode(this.orientationStatus(), this.orientation.headingSource());
+      if (mode) untracked(() => this.analytics.sensorMode(mode));
+    });
+
     // A satellite's availability needs its orbit data: compute it when that arrives.
     effect(() => {
       this.gp.stamp();
@@ -200,6 +211,23 @@ export class App {
     };
     document.addEventListener('visibilitychange', onVisibility);
     this.destroyRef.onDestroy(() => document.removeEventListener('visibilitychange', onVisibility));
+  }
+
+  private sensorMode(
+    status: ReturnType<typeof this.orientation.status>,
+    source: ReturnType<typeof this.orientation.headingSource>,
+  ): SensorMode | null {
+    switch (status) {
+      case 'active':
+        return source === 'ios-compass' ? 'ios' : source === 'absolute' ? 'absolute' : null;
+      case 'no-compass':
+        return 'no-compass';
+      case 'unsupported':
+      case 'manual':
+        return 'drag';
+      default:
+        return null;
+    }
   }
 
   protected openPicker(): void {

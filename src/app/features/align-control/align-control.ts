@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { computeYawCorrection } from '../../core/calibration/alignment';
 import { AlignmentService } from '../../core/calibration/alignment.service';
 import { SkyEngineService } from '../../core/engine/sky-engine.service';
@@ -188,6 +189,8 @@ export class AlignControl {
   protected readonly name = computed(() => this.selection.selected().name);
 
   /** Sensors are driving the view and the target is actually up there to be aligned with. */
+  private readonly analytics = inject(AnalyticsService);
+
   protected readonly canAlign = computed(() => {
     const target = this.engine.target();
     // Never for the Sun: aligning would mean looking at it.
@@ -232,6 +235,7 @@ export class AlignControl {
     this.engine.setTrackerPaused(false);
     if (yaw === null || source === null) return;
     const ok = this.alignment.set(yaw, source);
+    if (ok) this.analytics.alignmentLocked(yaw);
     this.showToast(
       ok
         ? `Aligned (corrected ${Math.round(Math.abs(yaw))}°)`

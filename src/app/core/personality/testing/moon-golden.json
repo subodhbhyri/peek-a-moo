@@ -1,0 +1,2084 @@
+{
+  "milestones": [5, 10, 25, 50, 100, 200, 500, 1000],
+  "cases": [
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 8000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.5961,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 1,
+        "durationMs": 30001,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.959521,
+      "text": "okay, you actually found me. hello, I guess.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 40,
+        "durationMs": 60000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.675319,
+      "text": "I've been here the whole time.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 30001,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [
+        "well. this is new. hi.",
+        "okay, you actually found me. hello, I guess.",
+        "I've been here the whole time."
+      ],
+      "r": 0.962277,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 25,
+        "durationMs": 3000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 5
+      },
+      "recent": [
+        "well. this is new. hi.",
+        "okay, you actually found me. hello, I guess.",
+        "I've been here the whole time.",
+        "oh— hi. you weren't supposed to see me like this."
+      ],
+      "r": 0.623416,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 40,
+        "durationMs": 30001,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 5
+      },
+      "recent": [
+        "okay, you actually found me. hello, I guess.",
+        "I've been here the whole time.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "at this point we're basically friends."
+      ],
+      "r": 0.761422,
+      "text": "finally. my arm was getting tired of waving.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 8000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 40,
+        "localHour": 3
+      },
+      "recent": [
+        "I've been here the whole time.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "at this point we're basically friends.",
+        "finally. my arm was getting tired of waving."
+      ],
+      "r": 0.742251,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 12,
+        "durationMs": 3000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 5,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.404065,
+      "text": "surprised? the sun and I share custody of the sky.",
+      "tag": "daytime"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 12,
+        "durationMs": 8000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.832383,
+      "text": "don't you have things to do, my friend?",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 7,
+        "durationMs": 60000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [
+        "finally. my arm was getting tired of waving.",
+        "go to sleep.",
+        "surprised? the sun and I share custody of the sky.",
+        "don't you have things to do, my friend?"
+      ],
+      "r": 0.096452,
+      "text": "almost full. peak form, honestly.",
+      "tag": "gibbous"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 800,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 1
+      },
+      "recent": [
+        "go to sleep.",
+        "surprised? the sun and I share custody of the sky.",
+        "don't you have things to do, my friend?",
+        "almost full. peak form, honestly."
+      ],
+      "r": 0.730548,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 2900,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.737865,
+      "text": "okay that was fast. suspicious.",
+      "tag": "quick"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 10,
+        "durationMs": 2900,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 5
+      },
+      "recent": [
+        "don't you have things to do, my friend?",
+        "almost full. peak form, honestly.",
+        "you again. this is becoming a whole thing.",
+        "okay that was fast. suspicious."
+      ],
+      "r": 0.999926,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 800,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [
+        "almost full. peak form, honestly.",
+        "you again. this is becoming a whole thing.",
+        "okay that was fast. suspicious.",
+        "at this point we're basically friends."
+      ],
+      "r": 0.304515,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 40,
+        "durationMs": 60000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.977409,
+      "text": "finally. my arm was getting tired of waving.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 10,
+        "durationMs": 8000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 3
+      },
+      "recent": [
+        "okay that was fast. suspicious.",
+        "at this point we're basically friends.",
+        "we've done this a lot now. I respect the dedication.",
+        "finally. my arm was getting tired of waving."
+      ],
+      "r": 0.38286,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 30000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "we've done this a lot now. I respect the dedication.",
+        "finally. my arm was getting tired of waving.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.574498,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 7,
+        "durationMs": 8000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.184017,
+      "text": "howl if you want, I won't judge.",
+      "tag": "full"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 1,
+        "durationMs": 800,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.553604,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 2900,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -30,
+        "localHour": 3
+      },
+      "recent": [
+        "you again. this is becoming a whole thing.",
+        "at this point we're basically friends.",
+        "howl if you want, I won't judge.",
+        "well. this is new. hi."
+      ],
+      "r": 0.379728,
+      "text": "can't find me down there. try again later.",
+      "tag": "below-horizon"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 12,
+        "durationMs": 800,
+        "moonPhase": "new",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.272089,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.648174,
+      "text": "hi again.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 1,
+        "durationMs": 2900,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 40,
+        "localHour": 3
+      },
+      "recent": [
+        "well. this is new. hi.",
+        "can't find me down there. try again later.",
+        "go to sleep.",
+        "hi again."
+      ],
+      "r": 0.414656,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 30000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.967364,
+      "text": "you and me both, apparently.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 60000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 5
+      },
+      "recent": [],
+      "r": 0.833365,
+      "text": "took you a minute. I was starting to enjoy the privacy.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 25,
+        "durationMs": 30000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 40,
+        "localHour": 4
+      },
+      "recent": [
+        "hi again.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "you and me both, apparently.",
+        "took you a minute. I was starting to enjoy the privacy."
+      ],
+      "r": 0.0073,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 1,
+        "durationMs": 60000,
+        "moonPhase": "new",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.595972,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 40,
+        "durationMs": 2900,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [
+        "you and me both, apparently.",
+        "took you a minute. I was starting to enjoy the privacy.",
+        "we've done this a lot now. I respect the dedication.",
+        "well. this is new. hi."
+      ],
+      "r": 0.512137,
+      "text": "wow. you weren't even trying, were you.",
+      "tag": "quick"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 3000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.520069,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 3,
+        "durationMs": 800,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.892696,
+      "text": "wow. you weren't even trying, were you.",
+      "tag": "quick"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 25,
+        "durationMs": 3000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 5,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.155044,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.430316,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "wow. you weren't even trying, were you.",
+        "we've done this a lot now. I respect the dedication.",
+        "at this point we're basically friends."
+      ],
+      "r": 0.178801,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 30000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [
+        "wow. you weren't even trying, were you.",
+        "we've done this a lot now. I respect the dedication.",
+        "at this point we're basically friends.",
+        "oh— hi. you weren't supposed to see me like this."
+      ],
+      "r": 0.08777,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 2900,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 40,
+        "localHour": 3
+      },
+      "recent": [
+        "we've done this a lot now. I respect the dedication.",
+        "at this point we're basically friends.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.813839,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 2900,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.994284,
+      "text": "back so soon?",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 3000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 1
+      },
+      "recent": [
+        "oh— hi. you weren't supposed to see me like this.",
+        "you again. this is becoming a whole thing.",
+        "you again. this is becoming a whole thing.",
+        "back so soon?"
+      ],
+      "r": 0.950311,
+      "text": "okay, you actually found me. hello, I guess.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 40,
+        "durationMs": 8000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 4
+      },
+      "recent": [
+        "you again. this is becoming a whole thing.",
+        "you again. this is becoming a whole thing.",
+        "back so soon?",
+        "okay, you actually found me. hello, I guess."
+      ],
+      "r": 0.781996,
+      "text": "don't you have things to do, my friend?",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 8000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 40,
+        "localHour": 0
+      },
+      "recent": [
+        "you again. this is becoming a whole thing.",
+        "back so soon?",
+        "okay, you actually found me. hello, I guess.",
+        "don't you have things to do, my friend?"
+      ],
+      "r": 0.504521,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 12,
+        "durationMs": 3000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 0
+      },
+      "recent": [
+        "back so soon?",
+        "okay, you actually found me. hello, I guess.",
+        "don't you have things to do, my friend?",
+        "at this point we're basically friends."
+      ],
+      "r": 0.163165,
+      "text": "almost full. peak form, honestly.",
+      "tag": "gibbous"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 25,
+        "durationMs": 30000,
+        "moonPhase": "new",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.952416,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 3,
+        "durationMs": 30000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.013366,
+      "text": "half of me is very available right now.",
+      "tag": "quarter"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 1,
+        "durationMs": 60000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.271606,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 1,
+        "durationMs": 8000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.828491,
+      "text": "okay, you actually found me. hello, I guess.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 2,
+        "durationMs": 60000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.514684,
+      "text": "took you a minute. I was starting to enjoy the privacy.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 2900,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [
+        "half of me is very available right now.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "okay, you actually found me. hello, I guess.",
+        "took you a minute. I was starting to enjoy the privacy."
+      ],
+      "r": 0.314931,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 30001,
+        "moonPhase": "new",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.233697,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 2900,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.11553,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 2900,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.792997,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 30000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 0
+      },
+      "recent": [
+        "we've done this a lot now. I respect the dedication.",
+        "go to sleep.",
+        "we've done this a lot now. I respect the dedication.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.831073,
+      "text": "we have to stop meeting like this.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 40,
+        "durationMs": 8000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.557907,
+      "text": "it's very late. we can talk in the morning.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 1,
+        "durationMs": 800,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.630909,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 12,
+        "durationMs": 60000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.84212,
+      "text": "we have to stop meeting like this.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 3000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 1
+      },
+      "recent": [
+        "we have to stop meeting like this.",
+        "it's very late. we can talk in the morning.",
+        "well. this is new. hi.",
+        "we have to stop meeting like this."
+      ],
+      "r": 0.41913,
+      "text": "daytime moon. rare pull, I know.",
+      "tag": "daytime"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 1,
+        "durationMs": 3000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 5
+      },
+      "recent": [],
+      "r": 0.650107,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 3,
+        "durationMs": 2900,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.797147,
+      "text": "wow. you weren't even trying, were you.",
+      "tag": "quick"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 800,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 3
+      },
+      "recent": [
+        "we have to stop meeting like this.",
+        "daytime moon. rare pull, I know.",
+        "well. this is new. hi.",
+        "wow. you weren't even trying, were you."
+      ],
+      "r": 0.474404,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 30001,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.501996,
+      "text": "well. this is new. hi.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 25,
+        "durationMs": 30000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 5,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.014119,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 8000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 0,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.664725,
+      "text": "don't you have things to do, my friend?",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 12,
+        "durationMs": 30001,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [
+        "oh— hi. you weren't supposed to see me like this.",
+        "well. this is new. hi.",
+        "we've done this a lot now. I respect the dedication.",
+        "don't you have things to do, my friend?"
+      ],
+      "r": 0.482751,
+      "text": "took you a minute. I was starting to enjoy the privacy.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 800,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.687323,
+      "text": "hi again.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 2,
+        "durationMs": 60000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 5
+      },
+      "recent": [
+        "we've done this a lot now. I respect the dedication.",
+        "don't you have things to do, my friend?",
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again."
+      ],
+      "r": 0.482977,
+      "text": "you're pointing at the floor. I appreciate the effort, though.",
+      "tag": "below-horizon"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 10,
+        "durationMs": 800,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 22
+      },
+      "recent": [
+        "don't you have things to do, my friend?",
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again.",
+        "you're pointing at the floor. I appreciate the effort, though."
+      ],
+      "r": 0.842326,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 7,
+        "durationMs": 60000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 1
+      },
+      "recent": [
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again.",
+        "you're pointing at the floor. I appreciate the effort, though.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.055956,
+      "text": "just a sliver of me today. use your imagination for the rest.",
+      "tag": "crescent"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 25,
+        "durationMs": 2900,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 22
+      },
+      "recent": [
+        "hi again.",
+        "you're pointing at the floor. I appreciate the effort, though.",
+        "you again. this is becoming a whole thing.",
+        "just a sliver of me today. use your imagination for the rest."
+      ],
+      "r": 0.418946,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 5,
+        "durationMs": 30000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 0,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.775385,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 8000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 40,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.435861,
+      "text": "daytime moon. rare pull, I know.",
+      "tag": "daytime"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 2,
+        "durationMs": 800,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 5
+      },
+      "recent": [
+        "just a sliver of me today. use your imagination for the rest.",
+        "we've done this a lot now. I respect the dedication.",
+        "you again. this is becoming a whole thing.",
+        "daytime moon. rare pull, I know."
+      ],
+      "r": 0.464558,
+      "text": "did you already know where I'd be?",
+      "tag": "quick"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 10,
+        "durationMs": 30000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.176168,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 10,
+        "durationMs": 2900,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.580493,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 7,
+        "durationMs": 3000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [],
+      "r": 0.136904,
+      "text": "just a sliver of me today. use your imagination for the rest.",
+      "tag": "crescent"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 25,
+        "durationMs": 3000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [
+        "did you already know where I'd be?",
+        "we've done this a lot now. I respect the dedication.",
+        "at this point we're basically friends.",
+        "just a sliver of me today. use your imagination for the rest."
+      ],
+      "r": 0.345327,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.986511,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 25,
+        "durationMs": 30000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 5,
+        "localHour": 4
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "just a sliver of me today. use your imagination for the rest.",
+        "you again. this is becoming a whole thing.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.624124,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 2900,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 4
+      },
+      "recent": [
+        "just a sliver of me today. use your imagination for the rest.",
+        "you again. this is becoming a whole thing.",
+        "you again. this is becoming a whole thing.",
+        "we've done this a lot now. I respect the dedication."
+      ],
+      "r": 0.851178,
+      "text": "we have to stop meeting like this.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 12,
+        "durationMs": 8000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 0
+      },
+      "recent": [
+        "you again. this is becoming a whole thing.",
+        "you again. this is becoming a whole thing.",
+        "we've done this a lot now. I respect the dedication.",
+        "we have to stop meeting like this."
+      ],
+      "r": 0.162504,
+      "text": "just a sliver of me today. use your imagination for the rest.",
+      "tag": "crescent"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 30000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.267578,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 12,
+        "durationMs": 30001,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.419562,
+      "text": "can't find me down there. try again later.",
+      "tag": "below-horizon"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 30000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 5
+      },
+      "recent": [],
+      "r": 0.507693,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 40,
+        "durationMs": 3000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.673931,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 3000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -30,
+        "localHour": 3
+      },
+      "recent": [
+        "go to sleep.",
+        "can't find me down there. try again later.",
+        "at this point we're basically friends.",
+        "go to sleep."
+      ],
+      "r": 0.263637,
+      "text": "crescent mode. mysterious and slightly smug about it.",
+      "tag": "crescent"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 7,
+        "durationMs": 8000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 12
+      },
+      "recent": [
+        "can't find me down there. try again later.",
+        "at this point we're basically friends.",
+        "go to sleep.",
+        "crescent mode. mysterious and slightly smug about it."
+      ],
+      "r": 0.656048,
+      "text": "hi again.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 3,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 0
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "go to sleep.",
+        "crescent mode. mysterious and slightly smug about it.",
+        "hi again."
+      ],
+      "r": 0.939182,
+      "text": "50/50, like a coin that's always tails.",
+      "tag": "quarter"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 30000,
+        "moonPhase": "new",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 0,
+        "localHour": 5
+      },
+      "recent": [],
+      "r": 0.480179,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 25,
+        "durationMs": 3000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 0
+      },
+      "recent": [
+        "crescent mode. mysterious and slightly smug about it.",
+        "hi again.",
+        "50/50, like a coin that's always tails.",
+        "at this point we're basically friends."
+      ],
+      "r": 0.592553,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 2900,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": 40,
+        "localHour": 4
+      },
+      "recent": [
+        "hi again.",
+        "50/50, like a coin that's always tails.",
+        "at this point we're basically friends.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.428081,
+      "text": "daytime moon. rare pull, I know.",
+      "tag": "daytime"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 1,
+        "durationMs": 30000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.974442,
+      "text": "okay, you actually found me. hello, I guess.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 5,
+        "durationMs": 30001,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "you again. this is becoming a whole thing.",
+        "daytime moon. rare pull, I know.",
+        "okay, you actually found me. hello, I guess."
+      ],
+      "r": 0.984817,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 30001,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.668707,
+      "text": "took you a minute. I was starting to enjoy the privacy.",
+      "tag": "long-hunt"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 40,
+        "durationMs": 30000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.758679,
+      "text": "hi again.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 3,
+        "durationMs": 8000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 0,
+        "localHour": 1
+      },
+      "recent": [
+        "okay, you actually found me. hello, I guess.",
+        "we've done this a lot now. I respect the dedication.",
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again."
+      ],
+      "r": 0.133225,
+      "text": "50/50, like a coin that's always tails.",
+      "tag": "quarter"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 2900,
+        "moonPhase": "new",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -30,
+        "localHour": 22
+      },
+      "recent": [
+        "we've done this a lot now. I respect the dedication.",
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again.",
+        "50/50, like a coin that's always tails."
+      ],
+      "r": 0.343937,
+      "text": "I'm literally on the other side of the planet right now.",
+      "tag": "below-horizon"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 60000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 12
+      },
+      "recent": [
+        "took you a minute. I was starting to enjoy the privacy.",
+        "hi again.",
+        "50/50, like a coin that's always tails.",
+        "I'm literally on the other side of the planet right now."
+      ],
+      "r": 0.017503,
+      "text": "almost full. peak form, honestly.",
+      "tag": "gibbous"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 40,
+        "durationMs": 60000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -30,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.1197,
+      "text": "half of me is very available right now.",
+      "tag": "quarter"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 8000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -30,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.564282,
+      "text": "go to sleep.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 60000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 5
+      },
+      "recent": [
+        "I'm literally on the other side of the planet right now.",
+        "almost full. peak form, honestly.",
+        "half of me is very available right now.",
+        "go to sleep."
+      ],
+      "r": 0.233058,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 40,
+        "durationMs": 60000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.747117,
+      "text": "hi again.",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 30000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -30,
+        "localHour": 4
+      },
+      "recent": [
+        "half of me is very available right now.",
+        "go to sleep.",
+        "we've done this a lot now. I respect the dedication.",
+        "hi again."
+      ],
+      "r": 0.902364,
+      "text": "back so soon?",
+      "tag": "repeat"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 5,
+        "durationMs": 2900,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 40,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.117207,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 3000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.509541,
+      "text": "daytime moon. rare pull, I know.",
+      "tag": "daytime"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 3000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 40,
+        "localHour": 4
+      },
+      "recent": [
+        "hi again.",
+        "back so soon?",
+        "we've done this a lot now. I respect the dedication.",
+        "daytime moon. rare pull, I know."
+      ],
+      "r": 0.693082,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 12,
+        "durationMs": 60000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": 0,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.041091,
+      "text": "half of me is very available right now.",
+      "tag": "quarter"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 10,
+        "durationMs": 30001,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 5,
+        "localHour": 3
+      },
+      "recent": [],
+      "r": 0.688684,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 60000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 12
+      },
+      "recent": [
+        "daytime moon. rare pull, I know.",
+        "you again. this is becoming a whole thing.",
+        "half of me is very available right now.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.09864,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 8000,
+        "moonPhase": "waxing-crescent",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": 5,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.001358,
+      "text": "just a sliver of me today. use your imagination for the rest.",
+      "tag": "crescent"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 3,
+        "durationMs": 60000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [
+        "half of me is very available right now.",
+        "you again. this is becoming a whole thing.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "just a sliver of me today. use your imagination for the rest."
+      ],
+      "r": 0.243789,
+      "text": "you're pointing at the floor. I appreciate the effort, though.",
+      "tag": "below-horizon"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 60000,
+        "moonPhase": "waning-crescent",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [],
+      "r": 0.233782,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 5,
+        "durationMs": 3000,
+        "moonPhase": "last-quarter",
+        "moonAltitudeDeg": -10,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 4
+      },
+      "recent": [],
+      "r": 0.681301,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 3000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 5
+      },
+      "recent": [
+        "just a sliver of me today. use your imagination for the rest.",
+        "you're pointing at the floor. I appreciate the effort, though.",
+        "we've done this a lot now. I respect the dedication.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.165508,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 25,
+        "durationMs": 800,
+        "moonPhase": "full",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -30,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.53171,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 30000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": 60,
+        "sunAltitudeDeg": -30,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.08291,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 1,
+        "durationMs": 8000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -30,
+        "localHour": 12
+      },
+      "recent": [
+        "you again. this is becoming a whole thing.",
+        "at this point we're basically friends.",
+        "at this point we're basically friends.",
+        "we've done this a lot now. I respect the dedication."
+      ],
+      "r": 0.011855,
+      "text": "oh— hi. you weren't supposed to see me like this.",
+      "tag": "first-ever"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 25,
+        "durationMs": 30000,
+        "moonPhase": "waxing-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 5,
+        "localHour": 0
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "at this point we're basically friends.",
+        "we've done this a lot now. I respect the dedication.",
+        "oh— hi. you weren't supposed to see me like this."
+      ],
+      "r": 0.783588,
+      "text": "you again. this is becoming a whole thing.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 7,
+        "durationMs": 30000,
+        "moonPhase": "waning-gibbous",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 0,
+        "localHour": 3
+      },
+      "recent": [
+        "at this point we're basically friends.",
+        "we've done this a lot now. I respect the dedication.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "you again. this is becoming a whole thing."
+      ],
+      "r": 0.041997,
+      "text": "almost full. peak form, honestly.",
+      "tag": "gibbous"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 2,
+        "durationMs": 60000,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": 0,
+        "localHour": 0
+      },
+      "recent": [
+        "we've done this a lot now. I respect the dedication.",
+        "oh— hi. you weren't supposed to see me like this.",
+        "you again. this is becoming a whole thing.",
+        "almost full. peak form, honestly."
+      ],
+      "r": 0.455059,
+      "text": "howl if you want, I won't judge.",
+      "tag": "full"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 7,
+        "durationMs": 30000,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 1
+      },
+      "recent": [],
+      "r": 0.943713,
+      "text": "you and me both, apparently.",
+      "tag": "late-night"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 2,
+        "lifetimeFindCount": 25,
+        "durationMs": 2900,
+        "moonPhase": "first-quarter",
+        "moonAltitudeDeg": -0.1,
+        "sunAltitudeDeg": 40,
+        "localHour": 22
+      },
+      "recent": [],
+      "r": 0.550401,
+      "text": "at this point we're basically friends.",
+      "tag": "milestone"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 3,
+        "lifetimeFindCount": 12,
+        "durationMs": 30001,
+        "moonPhase": "new",
+        "moonAltitudeDeg": 0,
+        "sunAltitudeDeg": -30,
+        "localHour": 0
+      },
+      "recent": [
+        "almost full. peak form, honestly.",
+        "howl if you want, I won't judge.",
+        "you and me both, apparently.",
+        "at this point we're basically friends."
+      ],
+      "r": 0.296064,
+      "text": "new moon. I'm shy today.",
+      "tag": "new"
+    },
+    {
+      "ctx": {
+        "sessionFindIndex": 1,
+        "lifetimeFindCount": 5,
+        "durationMs": 2900,
+        "moonPhase": "full",
+        "moonAltitudeDeg": 15,
+        "sunAltitudeDeg": -0.1,
+        "localHour": 1
+      },
+      "recent": [
+        "howl if you want, I won't judge.",
+        "you and me both, apparently.",
+        "at this point we're basically friends.",
+        "new moon. I'm shy today."
+      ],
+      "r": 0.307965,
+      "text": "we've done this a lot now. I respect the dedication.",
+      "tag": "milestone"
+    }
+  ]
+}

@@ -1,19 +1,9 @@
 import { MoonPhaseName } from '../astro/ephemeris';
+import type { TargetDef } from '../targets/target.types';
+import { LINE_PACKS, MOON_LINES } from './lines';
+import type { LinePack, LineTag } from './lines/types';
 
-export type LineTag =
-  | 'first-ever'
-  | 'milestone'
-  | 'quick'
-  | 'long-hunt'
-  | 'new'
-  | 'crescent'
-  | 'quarter'
-  | 'gibbous'
-  | 'full'
-  | 'daytime'
-  | 'below-horizon'
-  | 'late-night'
-  | 'repeat';
+export type { LineTag } from './lines/types';
 
 /** Lifetime find counts worth calling out. */
 export const MILESTONES: readonly number[] = [5, 10, 25, 50, 100, 200, 500, 1000];
@@ -43,68 +33,10 @@ const PHASE_TAG: Record<MoonPhaseName, LineTag> = {
   'waning-crescent': 'crescent',
 };
 
-const LINES: Record<LineTag, string[]> = {
-  'first-ever': [
-    "oh— hi. you weren't supposed to see me like this.",
-    'well. this is new. hi.',
-    'okay, you actually found me. hello, I guess.',
-  ],
-  milestone: [
-    "we've done this a lot now. I respect the dedication.",
-    "at this point we're basically friends.",
-    'you again. this is becoming a whole thing.',
-  ],
-  quick: [
-    'okay that was fast. suspicious.',
-    "wow. you weren't even trying, were you.",
-    "did you already know where I'd be?",
-  ],
-  'long-hunt': [
-    "I've been here the whole time.",
-    'took you a minute. I was starting to enjoy the privacy.',
-    'finally. my arm was getting tired of waving.',
-  ],
-  new: [
-    "I'm basically invisible right now and you still found me??",
-    "there's barely anything to see. bold of you to check anyway.",
-    "new moon. I'm shy today.",
-  ],
-  crescent: [
-    'just a sliver of me today. use your imagination for the rest.',
-    'crescent mode. mysterious and slightly smug about it.',
-  ],
-  quarter: ['half of me is very available right now.', "50/50, like a coin that's always tails."],
-  gibbous: ['almost full. peak form, honestly.', "getting rounder by the night. it's a whole arc."],
-  full: [
-    "yes I'm round, stop staring.",
-    'full moon. main character energy tonight.',
-    "howl if you want, I won't judge.",
-  ],
-  daytime: [
-    "yes, I'm allowed out in daylight.",
-    'surprised? the sun and I share custody of the sky.',
-    'daytime moon. rare pull, I know.',
-  ],
-  'below-horizon': [
-    "I'm literally on the other side of the planet right now.",
-    "you're pointing at the floor. I appreciate the effort, though.",
-    "can't find me down there. try again later.",
-  ],
-  'late-night': [
-    'go to sleep.',
-    "it's very late. we can talk in the morning.",
-    'you and me both, apparently.',
-  ],
-  repeat: [
-    'hi again.',
-    "don't you have things to do, my friend?",
-    'we have to stop meeting like this.',
-    'back so soon?',
-  ],
-};
+const LINES: LinePack = MOON_LINES;
 
 const LINE_TO_TAG = new Map<string, LineTag>(
-  (Object.entries(LINES) as [LineTag, string[]][]).flatMap(([tag, texts]) =>
+  (Object.entries(LINES) as [LineTag, readonly string[]][]).flatMap(([tag, texts]) =>
     texts.map((t) => [t, tag] as const),
   ),
 );
@@ -125,12 +57,20 @@ export function selectFindLine(
   recentTexts: readonly string[] = [],
   random: () => number = Math.random,
 ): SelectedLine {
-  const tags = candidateTags(ctx);
-  const pool = tags.flatMap((tag) => LINES[tag].map((text) => ({ text, tag })));
+  return pickLine(LINES, candidateTags(ctx), recentTexts, random);
+}
+
+/** One pool from the tags' lines, minus recently shown ones where possible, then a random pick. */
+function pickLine(
+  pack: LinePack,
+  tags: readonly LineTag[],
+  recentTexts: readonly string[],
+  random: () => number,
+): SelectedLine {
+  const pool = tags.flatMap((tag) => (pack[tag] ?? []).map((text) => ({ text, tag })));
   const filtered = pool.filter((p) => !recentTexts.includes(p.text));
   const finalPool = filtered.length > 0 ? filtered : pool;
-  const pick = finalPool[Math.floor(clampUnit(random()) * finalPool.length)];
-  return pick;
+  return finalPool[Math.floor(clampUnit(random()) * finalPool.length)];
 }
 
 /** Exposed for the UI (e.g. a phase-appropriate emoji next to the line) and for tests. */
@@ -154,4 +94,73 @@ function candidateTags(ctx: FindLineContext): LineTag[] {
 
 function clampUnit(x: number): number {
   return Math.min(0.999999, Math.max(0, x));
+}
+
+/** What a non-Moon find knows about itself. */
+export interface TargetLineContext {
+  /** Finds of THIS target, including this one (from StatsService.perTarget). */
+  targetFinds: number;
+  /** Finds of this target this session, including this one. */
+  sessionFindIndex: number;
+  durationMs: number;
+  altitudeDeg: number;
+  magnitude: number | null;
+  /** Satellites only. */
+  sunlit?: boolean;
+}
+
+const BRIGHT_PLANET_MAG = -1;
+const BRIGHT_STAR_MAG = 0;
+const LOW_ALT_DEG = 10;
+const TWINKLE_BELOW_ALT_DEG = 30;
+const FAINT_ABOVE_MAG = 2.5;
+const OVERHEAD_ABOVE_ALT_DEG = 60;
+
+/**
+ * Tags for a non-Moon find, in pool order. Like the Moon: the first find of a target and per-target
+ * milestones are exclusive occasions; otherwise the context tags that fit this kind of target, then
+ * quick / long-hunt, then repeat (any find after the first). The Sun has only safety lines.
+ */
+export function targetLineTags(def: TargetDef, ctx: TargetLineContext): LineTag[] {
+  if (def.kind === 'sun') return ['safety'];
+  if (ctx.targetFinds <= 1) return ['first'];
+  if (MILESTONES.includes(ctx.targetFinds)) return ['milestone'];
+
+  const tags: LineTag[] = [];
+  const low = ctx.altitudeDeg > 0 && ctx.altitudeDeg < LOW_ALT_DEG;
+  switch (def.category) {
+    case 'solar-system':
+      if (ctx.magnitude !== null && ctx.magnitude < BRIGHT_PLANET_MAG) tags.push('bright');
+      if (low) tags.push('low');
+      break;
+    case 'stars':
+      if (ctx.magnitude !== null && ctx.magnitude < BRIGHT_STAR_MAG) tags.push('bright');
+      if (ctx.altitudeDeg < TWINKLE_BELOW_ALT_DEG) tags.push('twinkle');
+      if (low) tags.push('low');
+      break;
+    case 'deep-sky':
+      if (ctx.magnitude === null || ctx.magnitude > FAINT_ABOVE_MAG) tags.push('faint');
+      if (low) tags.push('low');
+      break;
+    case 'satellites':
+      if (ctx.altitudeDeg > OVERHEAD_ABOVE_ALT_DEG) tags.push('overhead');
+      if (ctx.sunlit === false) tags.push('shadow');
+      break;
+  }
+  if (ctx.durationMs < 3000) tags.push('quick');
+  if (ctx.durationMs > 30_000) tags.push('long-hunt');
+  tags.push('repeat');
+  return tags;
+}
+
+/** The line for a non-Moon find, from that target's pack; null if it has none. */
+export function selectTargetLine(
+  def: TargetDef,
+  ctx: TargetLineContext,
+  recentTexts: readonly string[] = [],
+  random: () => number = Math.random,
+): SelectedLine | null {
+  const pack = LINE_PACKS[def.id];
+  if (!pack) return null;
+  return pickLine(pack, targetLineTags(def, ctx), recentTexts, random);
 }

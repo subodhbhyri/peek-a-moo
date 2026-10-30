@@ -1,80 +1,85 @@
-# Find the moon
+# Peek-a-Moo
 
-Point your phone at the sky. When it's aimed at the real Moon, the Moon shows up on screen — and is mildly embarrassed about it.
+**Point your phone at the sky and find the Moon, planets, stars, galaxies and the ISS.**
 
-Built with Angular 21, `astronomy-engine` (topocentric ephemeris), and `geomagnetism` (WMM2025 magnetic declination). No backend — your location never leaves your device.
+Live: <LIVE_URL> · Demo: ![demo](docs/media/demo.gif)
 
-Full build plan and phase-by-phase status: [docs/archive/PLAN-v1.md](./docs/archive/PLAN-v1.md)
+Pick something in the sky, then move your phone until it slides into view from the right edge. Peek-a-Moo draws the target where it really is, tells you what is up right now, and — once you find it — says something about it. The Moon is mildly embarrassed. Jupiter is smug. Uranus is tired of the jokes.
 
-## 1. Setup
+## What you can find
+
+| Category | Examples |
+|---|---|
+| Solar system | the Moon (with phase), the Sun (with safety warnings), Mercury to Neptune, Saturn with rings |
+| Stars | Polaris, Sirius, Betelgeuse, Vega, Arcturus |
+| Deep sky | Andromeda, the Orion Nebula, the Pleiades, the Galactic Center, the Large Magellanic Cloud |
+| Satellites | the ISS, Tiangong, Hubble, with their next visible pass |
+
+The picker shows live status for each ("Up now", "Rises in 3h 12m", "Visible pass in 2h 14m · 63° high", "Never rises from here") and a "Best right now" row. Everything except the satellites works offline.
+
+## How it works
+
+Everything that is math is a pure function with tests; the app around it is glue. Deeper notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the phase write-ups in [docs/phases/](docs/phases/).
+
+**One world frame.** Everything lives in a local **ENU** frame: x = East, y = North, z = Up. Azimuth is measured clockwise from *true* north; altitude is up from the horizon. Screen angles are y-up.
+
+**Phone orientation → camera direction.** The browser gives `DeviceOrientation` Euler angles (α, β, γ). The W3C definition of those angles is a rotation matrix `R = Rz(α)·Rx(β)·Ry(γ)`; the direction the back camera looks is `−z` of the device frame rotated by `R`. We check this against the W3C spec's own compass-heading formula for hundreds of random orientations. The result is a camera basis (right, up, forward) in ENU, smoothed with a quaternion low-pass.
+
+**iOS compass, and why it only samples when flat.** Android reports an absolute heading. iOS reports a relative α plus `webkitCompassHeading`, which is only unambiguous when the phone is lying flat in portrait (it is then the heading of the top edge). So we sample it only then, estimate the offset between the gyro α and true heading, hold that offset while you lift the phone, and ask you to "hold flat for a second" at the start.
+
+**Magnetic → true north.** Compasses point at magnetic north. We add the local declination from the **WMM2025** world magnetic model (the `geomagnetism` package) for your location.
+
+**Sight alignment.** Phone magnetometers are often off by 5–30° (cases, magnets, cars). Tap the crosshair, center the *real* target, tap Lock: we store the yaw difference between where the phone says it points and where the target is, and apply it afterwards (it expires after 6 hours or 50 km).
+
+**Projection and the edge hint.** A target direction `d` is projected with a pinhole camera: `x = W/2 + f·(d·right)/(d·forward)`, `y = H/2 − f·(d·up)/(d·forward)`, with `f = (H/2)/tan(vFOV/2)`. Because it is a real perspective projection, an off-screen target lands just outside the screen on the correct side, so it slides in naturally. If you search for 20 seconds, a glow appears on the nearest edge. With the camera on, the field of view is derived from the video's size and its cover-crop, with an adjustable per-device slider.
+
+**Where the Moon and planets are.** [astronomy-engine](https://github.com/cosinekitty/astronomy) gives topocentric (as seen from your location, parallax included) equatorial coordinates, converted to horizontal with standard refraction. Phase and magnitude come from its illumination model.
+
+**Where the stars and galaxies are.** Fixed objects are stored as J2000 RA/Dec. A rotation matrix from J2000 to the local horizon (`Rotation_EQJ_HOR`) for your time and place turns them into ENU directions. We check it against astronomy-engine's own star path to 0.01°, and that Polaris sits at an altitude equal to your latitude.
+
+**Where the ISS is.** Public orbital elements (OMM JSON from CelesTrak) feed the SGP4 propagator ([satellite.js](https://github.com/shashwatak/satellite-js)); the TEME position is rotated to Earth-fixed, then to azimuth/elevation from you. "Sunlit?" is a cylindrical Earth-shadow test: the satellite is in shadow iff `r·ŝ < 0` and `|r − (r·ŝ)ŝ| < 6378 km`. A *pass* is found by sampling elevation every 20 s and bisecting each 10° crossing to 1 s; it is *visible* if at some moment the satellite is sunlit, above 10°, and the Sun is below −6°.
+
+**Rise and set times.** One generic crossing search (sample, then bisect) serves every kind of target; only the step and horizon change (20 min and 0° for the sky, 20 s and 10° for satellites).
+
+**Orienting galaxies and rings on screen.** Extended objects are drawn at their true angular size and rotated by their position angle, measured from *celestial north*. The on-screen direction of celestial north is the tangent at the target toward the north celestial pole, projected onto the screen axes (the same trick that points the Moon's lit side at the Sun).
+
+## How it's tested
+
+- **Oracle tests** compare against something independent: the W3C compass formula, a second library path (`DefineStar` vs the rotation matrix), published ranges for magnitudes and sizes, `SearchRiseSet` for rise/set times, and the **Vallado SGP4 verification vector** (catalog 00005, to 1e-3 km, through both the TLE and the OMM input paths).
+- **Characterization pins** freeze behavior that must not change while the code underneath does: the Moon's numbers from v1, its exact canvas draw calls, and the Moon's line selection (replayed from 120 recorded cases).
+- **Field tests**, one gate per phase. Phase 1 (iPhone, iOS 26): the drawn Moon matched the real Moon without alignment; upright compass heading agreed with the flat-calibrated heading to about 1°. Android and camera-mode FOV are the open ones.
+- The `api/gp` function is tested with a mocked `fetch`, including "one 403 means no more requests".
+
+## Privacy
+
+Your location never leaves your device. The only network calls are public orbital elements, fetched through our own cached endpoint (and only when a satellite is selected), and anonymous usage counts through Vercel Web Analytics: which target, how long it took in coarse buckets, share method, sensor type. Never location, coordinates or user agent, and nothing under `?debug`.
+
+## Run it
+
+Node ≥ 22.12.
 
 ```bash
 npm install
-npm start          # http://localhost:4200
+npm start                  # http://localhost:4200   (add ?debug for a live sensor readout)
+npm run format:check && npm run lint && npx ng test --watch=false && npm run build
 ```
 
-Add `?debug` to the URL for a live sensor readout (raw orientation values, calibration offset, computed vs. pointed-at Moon position). You'll want this open on your phone for the checks below.
+Phones need HTTPS for motion sensors, so test on a deployed preview (see below), or fake sensors in Chrome DevTools → Sensors.
 
-## 2. Test before you touch a phone
+**Deploy.** Push to GitHub and import the repo in [Vercel](https://vercel.com/new) (preset Angular; `vercel.json` already points at `dist/find-the-moon/browser`). `api/gp.ts` is picked up automatically as a Vercel Function. The package and output folder keep the old name `find-the-moon` so the Vercel setup does not break.
 
-```bash
-npm run format:check   # Prettier
-npm run lint            # ESLint
-npm test -- --watch=false   # 64 unit tests
-npm run build            # production build
-```
+**Satellite data.** `ng serve` does not run Vercel functions, so locally the app uses the bundled snapshot `public/data/gp-fallback.json`. To try the real endpoint, run `npx vercel dev`. `npm run gp:refresh` rewrites the snapshot (a weekly GitHub Action does too). CelesTrak asks clients to fetch at most once per update; our function caches for 2 hours and never retries.
 
-All four should pass clean. CI (`.github/workflows/ci.yml`) runs the same four steps on every push and PR once this is on GitHub.
+**Share links.** `?target=<id>` opens straight into a target, e.g. `/?target=jupiter`.
 
-## 3. Test on a real phone
+## Credits
 
-Browser sensors (motion, orientation, geolocation) require HTTPS, so `localhost` on your laptop won't let a *phone* provide sensor data — but you can still open `localhost:4200` on the laptop itself and fake sensors via Chrome DevTools → More tools → Sensors, which is a fast way to sanity-check things before deploying.
+- [astronomy-engine](https://github.com/cosinekitty/astronomy) by Don Cross: ephemeris, rise/set, illumination.
+- [satellite.js](https://github.com/shashwatak/satellite-js): SGP4 propagation.
+- [geomagnetism](https://github.com/naturalatlas/geomagnetism) with the NOAA/BGS World Magnetic Model (WMM2025).
+- [CelesTrak](https://celestrak.org) for public orbital elements; please read their usage guidance on the site before building on it (they ask clients to download at most once per update).
+- Angular, Vercel Web Analytics.
 
-For the real thing, you need an HTTPS URL your phone can reach. The easiest path is a Vercel preview:
+## More
 
-1. Push this repo to GitHub.
-2. Import it in Vercel ([vercel.com/new](https://vercel.com/new)). Framework preset: **Angular**. It should auto-detect the output directory from `vercel.json` (`dist/find-the-moon/browser`) — if it asks, set that manually.
-3. Every push gets a preview URL like `find-the-moon-xyz.vercel.app`. Open that on your phone.
-
-**On your phone, in this order:**
-
-1. **Open the debug view** (`?debug` in the URL) first, before anything else, so you can see numbers while you test.
-2. **Grant permissions.** On iOS you'll get a "Tap anywhere to begin" screen — tap it, then allow both the motion and location prompts. On Android it should start immediately.
-3. **Check `pointing az`** in the debug overlay against a real compass app. They should differ by roughly the `decl` value shown (your local magnetic declination) — if they match exactly with no declination applied, something's wrong with the correction.
-4. **Tilt between flat and upright** (iOS only) and watch `ios offset` / `spread` in the debug overlay. `spread` should stay close to 0. If it drifts as you tilt, the heading-source assumption in `referenceHeading()` (in `core/sensors/orientation-math.ts`) doesn't hold for your phone and needs a tweak — see the comment on that function for what to change.
-5. **Rotate to landscape** and back. The Moon should stay in the same real-world spot on screen throughout, not jump.
-6. **Go outside and actually point at the Moon.** This is the real test. The drawn Moon should sit right on top of the real one. If it's consistently off in one direction:
-   - Off left/right → check declination and heading first (steps 3–4)
-   - Off up/down → check location accuracy, then the vFOV feel parameter (`V_FOV_DEG` in `sky-view.ts`) — this one only affects speed/difficulty, not accuracy, so a vertical offset is more likely a location or altitude issue
-7. **Let it find you.** Center the Moon and hold still for under a second — you should get a face, a line of dialogue, a corner toast ("Found the moon in X.Xs 🌘"), and (Android) a short vibration.
-8. **Try the fallbacks deliberately:**
-   - Deny location when prompted → a "Set location" chip should appear; tap it and search for your city
-   - On a laptop/desktop browser (no orientation sensors) → after ~2.5s you should see a "drag the sky instead" hint, and dragging the canvas should move the view
-   - Deny motion on iOS → should show a clear "reload and allow" message
-9. **Tap the camera toggle** (top-right) to confirm the environment-facing camera feed shows up behind the sky. Known limitation: the field of view isn't calibrated to the real camera's FOV yet, so treat this as a fun visual layer, not a precise AR overlay.
-10. **Leave it idle for 20+ seconds while searching** (don't find the Moon) — a faint glow should appear at the screen edge nearest the Moon's direction.
-
-## 4. Before deploying for real
-
-- Pick a name/domain (a few ideas are in docs/archive/PLAN-v1.md) and connect it in Vercel's project settings.
-- If you want analytics, add Vercel Analytics or Plausible now — this was deliberately left out since it needs your account, and the plan only asks for anonymous events (found, find-time bucket, platform), never location.
-- Consider recording a short screen capture for the README/portfolio once you've confirmed it works outside.
-
-## 5. Deploy
-
-Once everything above checks out:
-
-```bash
-git add -A
-git commit -m "Find the moon"
-git push
-```
-
-Vercel auto-deploys the `main` branch to production on push. Nothing else to configure — `vercel.json` already points at the right build output.
-
-## 6. Satellites and orbit data (ISS, Tiangong, Hubble)
-
-The only network call the app makes is for public orbital elements, and only once a satellite is selected or the picker's Satellites section is on screen. The browser asks our own `/api/gp` ([api/gp.ts](api/gp.ts), a Vercel Function), which fetches a fixed whitelist from CelesTrak (`FORMAT=JSON`, never retried) and is cached at the edge for 2 hours.
-
-- `ng serve` does not run Vercel functions, so in development the app falls back to the bundled snapshot, [public/data/gp-fallback.json](public/data/gp-fallback.json). To exercise the real endpoint locally, run `npx vercel dev` and open the URL it prints (`/api/gp` should return 3 element sets).
-- Refresh the bundled snapshot with `npm run gp:refresh` (same whitelist and rules; exits non-zero on any non-200 and writes nothing), then commit the file.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the design doc; [docs/phases/](docs/phases/) has the spec and the report for every phase. The original v1 plan is archived in [docs/archive/PLAN-v1.md](docs/archive/PLAN-v1.md).

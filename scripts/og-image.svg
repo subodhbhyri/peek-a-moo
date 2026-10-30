@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Source of public/og-image.png. Regenerate with: node scripts/og-image.mjs -->
+  <defs>
+    <mask id="crescent">
+      <rect width="1200" height="630" fill="black" />
+      <circle cx="860" cy="300" r="170" fill="white" />
+      <circle cx="935" cy="272" r="150" fill="black" />
+    </mask>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#f2efe6" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#f2efe6" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#030303" />
+
+  <!-- A few stars, a planet and a satellite trail -->
+  <g fill="#f2efe6">
+    <circle cx="640" cy="90" r="2" opacity="0.8" />
+    <circle cx="745" cy="520" r="1.6" opacity="0.6" />
+    <circle cx="1090" cy="150" r="2.2" opacity="0.85" />
+    <circle cx="1120" cy="470" r="1.5" opacity="0.55" />
+    <circle cx="1010" cy="560" r="2" opacity="0.7" />
+    <circle cx="560" cy="540" r="1.4" opacity="0.5" />
+    <circle cx="1160" cy="300" r="1.6" opacity="0.6" />
+  </g>
+  <circle cx="1060" cy="355" r="22" fill="url(#glow)" opacity="0.5" />
+  <circle cx="1060" cy="355" r="7" fill="#e3c9a3" />
+  <g stroke-linecap="round" fill="none">
+    <path d="M 700 120 L 790 82" stroke="#f2efe6" stroke-opacity="0.25" stroke-width="3" />
+    <path d="M 790 82 L 848 58" stroke="#f2efe6" stroke-opacity="0.55" stroke-width="3" />
+  </g>
+  <circle cx="852" cy="56" r="5" fill="#f2efe6" />
+
+  <!-- The crescent -->
+  <rect width="1200" height="630" fill="#f2efe6" mask="url(#crescent)" />
+
+  <text x="90" y="300" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-style="italic" fill="#f2efe6">Peek-a-Moo</text>
+  <text x="94" y="352" font-family="system-ui, 'Segoe UI', Arial, sans-serif" font-size="30" fill="#b9b6ab">Find the Moon, planets, stars and the ISS.</text>
+  <text x="94" y="396" font-family="system-ui, 'Segoe UI', Arial, sans-serif" font-size="24" fill="#8d8a80">Point your phone at the sky.</text>
+</svg>

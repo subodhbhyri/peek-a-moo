@@ -3,30 +3,12 @@ import {
   NOT_VISIBLE_NOTE,
   SUN_CAMERA_NOTE,
   SUN_SAFETY_BANNER,
-  TARGET_FOUND_LINES,
   isNotNakedEye,
   satelliteFoundNote,
-  targetFoundLine,
   targetFoundToast,
 } from './target-lines';
 
 describe('target found lines', () => {
-  it('every non-Moon target has exactly one line; the Moon keeps the v1 system', () => {
-    for (const t of TARGETS) {
-      if (t.kind === 'moon') expect(targetFoundLine(t.id)).toBeNull();
-      else expect(targetFoundLine(t.id), t.id).toBeTruthy();
-    }
-    expect(Object.keys(TARGET_FOUND_LINES).sort()).toEqual(
-      TARGETS.filter((t) => t.kind !== 'moon')
-        .map((t) => t.id)
-        .sort(),
-    );
-  });
-
-  it('the Sun line is the safety message', () => {
-    expect(targetFoundLine('sun')).toBe('Found it. Now look away from it.');
-  });
-
   it('toasts read "Found {name} in X.Xs", with an article for the Sun', () => {
     expect(targetFoundToast(getTarget('jupiter')!, 4234)).toBe('Found Jupiter in 4.2s');
     expect(targetFoundToast(getTarget('sun')!, 12000)).toBe('Found the Sun in 12.0s');
@@ -37,13 +19,6 @@ describe('target found lines', () => {
       'Never look at the Sun — not directly, not through your camera.',
     );
     expect(SUN_CAMERA_NOTE).toBe('Camera is off for the Sun.');
-  });
-
-  it('the Galactic Center and Polaris lines are the specified ones', () => {
-    expect(targetFoundLine('polaris')).toBe('Polaris. The sky turns around me.');
-    expect(targetFoundLine('galactic-center')).toBe(
-      "You can't see it — but 4 million suns' worth of black hole is right there.",
-    );
   });
 
   it('flags targets that are not naked-eye: magnitude null or fainter than 6', () => {
@@ -61,11 +36,10 @@ describe('target found lines', () => {
 });
 
 describe('satellite found moment', () => {
-  it('uses the sentence name in the toast and has a line per satellite', () => {
+  it('uses the sentence name in the toast', () => {
     expect(targetFoundToast(getTarget('iss')!, 4234)).toBe('Found the ISS in 4.2s');
     expect(targetFoundToast(getTarget('tiangong')!, 4234)).toBe('Found Tiangong in 4.2s');
     expect(targetFoundToast(getTarget('hubble')!, 4234)).toBe('Found Hubble in 4.2s');
-    expect(targetFoundLine('iss')).toBe("That's the ISS. Seven people up there, waving.");
   });
 
   it("in Earth's shadow it says so; in daylight it says the sky is too bright; otherwise nothing", () => {

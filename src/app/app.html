@@ -113,6 +113,7 @@
   [class.below-banner]="isSun()"
   [class.disabled]="isSun()"
   (click)="toggleCamera()"
+  aria-label="Camera background"
   [attr.aria-pressed]="cameraOn()"
   [attr.aria-disabled]="isSun()"
   [attr.title]="isSun() ? sunCameraNote : null"

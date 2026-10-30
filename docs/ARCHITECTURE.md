@@ -15,25 +15,38 @@ The user opens a picker ("drop box") and chooses a target: the Moon, a planet, a
 4. **Every piece of astronomy or geometry math is a pure function with tests**, ideally against an independent oracle (spec formula, published value, or a second library path), not only against our own conventions.
 5. **Sun safety.** When the target is the Sun, the app warns never to look at it directly or through the camera, and the found moment says so.
 
-## 3. Current state (v1 snapshot)
+## 3. Current state (v2, as built)
+
+All seven phases are done (see §7). The app is "pick anything in the sky, then find it": 22 targets, a picker with live availability, satellites with pass prediction, a voice per target, anonymous analytics.
 
 ```
+api/gp.ts                    Vercel Function: whitelisted CelesTrak OMM fetch, edge-cached 2 h, never retries
+scripts/                     gp-refresh.mjs (offline snapshot), og-image.mjs/.svg, stamp-version.mjs
+public/data/gp-fallback.json bundled orbital-elements snapshot (refreshed weekly by a GitHub Action)
 src/app/core/
   math/vec3.ts               ENU vectors, Mat3, quaternions, slerp
-  astro/ephemeris.ts         computeMoonState() via astronomy-engine (topocentric)
-  astro/declination.ts       WMM2025 magnetic declination (geomagnetism)
-  sensors/orientation-math.ts   W3C Euler -> rotation, camera basis, iOS HeadingOffsetCalibrator
-  sensors/orientation.service.ts  event handling, smoothing, declination, status signals
-  sensors/location.service.ts, drag-look.ts, wake-lock.service.ts, permissions.ts
-  projection/projection.ts   pinhole projection, lit-limb angle, edge glow
+  astro/                     ephemeris.ts (Moon, via astronomy-engine), declination.ts (WMM2025)
+  sensors/                   orientation-math (W3C Euler -> basis, iOS flat-only calibrator), orientation.service,
+                             location.service, drag-look, wake-lock, permissions
+  calibration/               sight alignment (yaw correction, validity rules, storage)
+  projection/                pinhole projection, edge glow, camera FOV, sky-north on screen
+  targets/                   catalog (22 targets), target-selection, compute (dispatch by kind), display (sizes,
+                             find thresholds), cadence, share, crossings (generic rise/set scan), availability
+                             (+ service, formatter), satellite-passes
+    providers/               moon, solar-system, fixed-sky, satellite  (pure: def, date, observer -> TargetState)
+  gp/                        GpService (memory -> localStorage -> /api/gp -> snapshot), element-age flags
+  satellite-lib.ts           the few satellite.js functions we use, imported from its dist/ files
+  engine/sky-engine.service  glue: selection + location + orientation + provider + projection + find tracker
   tracking/find-tracker.ts   searching -> visible -> found -> lost state machine
-  engine/sky-engine.service.ts  glue: ephemeris + orientation + projection + tracker
-  render/moon-phase.ts       Moon phase drawing
-  personality/*              find lines, stats
-features/ sky-view, moon-face, corner-stat, city-picker, debug-overlay
+  render/                    one drawer per render style (moon, planet, sun, star, extended, satellite)
+  personality/               find-lines (tagged selector), lines/<id>.ts packs, target-lines (toasts, notes), stats
+  analytics/                 AnalyticsService: typed anonymous events, no location, none under ?debug
+  debug/                     debug-report
+features/                    sky-view, moon-face, corner-stat, target-picker, align-control, camera-settings,
+                             city-picker, debug-overlay
 ```
 
-Conventions kept in v2: world frame **ENU** (x=East, y=North, z=Up); azimuth clockwise from **true** north; screen angles y-UP (0 = right, π/2 = up).
+Conventions: world frame **ENU** (x=East, y=North, z=Up); azimuth clockwise from **true** north; screen angles y-UP (0 = right, π/2 = up). Pins that must not move: the Phase 2 characterization spec, the Phase 3 Moon draw-call pins, and `find-lines.spec.ts` (plus the recorded Moon-selection replay).
 
 ## 4. Why v1 pointed at the wrong place (findings that drive Phase 1)
 
@@ -146,7 +159,7 @@ Sky-north on screen (for extended objects): tangent at the target toward the nor
 
 Line packs per target (`core/personality/lines/<id>.ts`) sharing the existing tag selector. The Moon keeps its awkward voice; others get short voices of their own (Jupiter: smug; ISS: busy, "can't talk, doing 7.66 km/s"). Stats become per-target + lifetime.
 
-## 6. v1 catalog (curated, ~22 targets)
+## 6. The catalog (22 targets, as shipped)
 
 | Category | Targets |
 |---|---|
@@ -161,15 +174,17 @@ Later candidates: Voyager 1/2 (fixed coordinates from JPL Horizons, refreshed ye
 
 Each phase is one file in `docs/phases/`, sized for one Claude Code (Sonnet) session. A phase ends with a `docs/phases/phaseN-report.md` written by the implementer; the next phase file is written after reviewing that report.
 
-| Phase | Goal | Gate to continue |
+| Phase | Goal | Status / report |
 |---|---|---|
-| **1** | Pointing accuracy: iOS flat-only calibration, sight alignment, camera FOV, oracle tests, debug report | Outdoor field test: real Moon within ~3° on your phone after alignment; report pasted back |
-| 2 | Target abstraction; migrate Moon with zero behavior change | All v1 tests pass; Moon looks identical |
-| 3 | Sun + planets: providers, renderers, Sun safety | Jupiter/Venus land on the real ones outdoors |
-| 4 | Fixed sky: stars + deep sky, extended renderer, sky-north orientation | Polaris altitude ≈ latitude; M31 orientation test |
-| 5 | Picker ("drop box") + availability (rise/set, labels) + `?target=` deep links | Picker usable one-handed; correct up/down states |
-| 6 | Satellites: `api/gp`, OMM + SGP4, passes, trail renderer | ISS pass matches a public tracker within ~1 min |
-| 7 | Per-target personality + stats, analytics events (`target_found`), share, README for portfolio | CI green, Lighthouse pass |
+| **1** | Pointing accuracy: iOS flat-only calibration, sight alignment, camera FOV, oracle tests, debug report | Done. Field result recorded in §4. [report](phases/phase1-report.md) |
+| 2 | Target abstraction; migrate Moon with zero behavior change | Done. [report](phases/phase2-report.md) |
+| 3 | Sun + planets: providers, renderers, Sun safety | Done. [report](phases/phase3-report.md) |
+| 4 | Fixed sky: stars + deep sky, extended renderer, sky-north orientation | Done. [report](phases/phase4-report.md) |
+| 5 | Picker + availability (rise/set, labels) + `?target=` deep links | Done. [report](phases/phase5-report.md) |
+| 6 | Satellites: `api/gp`, OMM + SGP4, passes, trail renderer | Done. [report](phases/phase6-report.md) |
+| 7 | Per-target personality, analytics, rename, README | Done. [report](phases/phase7-report.md) |
+
+Still open from the field-test gates: Android pointing accuracy, camera-mode overlay/FOV on a real video, the Phase 5/6 on-device checks (picker usability, ISS pass against a public tracker), and the Phase 7 launch checks. They are listed as manual checks in each report.
 
 ## 8. Working rules for every phase (for the implementer)
 

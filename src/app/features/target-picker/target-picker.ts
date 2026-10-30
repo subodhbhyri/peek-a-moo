@@ -12,6 +12,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { AnalyticsService, SelectionSource } from '../../core/analytics/analytics.service';
 import { GpService } from '../../core/gp/gp.service';
 import { StatsService } from '../../core/personality/stats.service';
 import { AvailabilityService } from '../../core/targets/availability.service';
@@ -106,7 +107,7 @@ const FOCUSABLE =
                 <h3>Best right now</h3>
                 <div class="chips">
                   @for (def of best(); track def.id) {
-                    <button type="button" class="chip" (click)="choose(def)">
+                    <button type="button" class="chip" (click)="choose(def, 'best-now')">
                       <span class="glyph" aria-hidden="true">{{ glyph(def) }}</span>
                       {{ def.shortName }}
                     </button>
@@ -134,7 +135,10 @@ const FOCUSABLE =
                           <span class="name">
                             {{ row.def.name }}
                             @if (row.warn) {
-                              <span class="warn" aria-label="Warning: never look at the Sun"
+                              <span
+                                class="warn"
+                                role="img"
+                                aria-label="Warning: never look at the Sun"
                                 >⚠️</span
                               >
                             }
@@ -151,7 +155,7 @@ const FOCUSABLE =
                           }
                         </span>
                         @if (row.selected) {
-                          <span class="check" aria-label="Selected">✓</span>
+                          <span class="check" role="img" aria-label="Selected">✓</span>
                         }
                       </button>
                     </li>
@@ -383,6 +387,7 @@ export class TargetPicker {
   private readonly availability = inject(AvailabilityService);
   private readonly stats = inject(StatsService);
   private readonly gp = inject(GpService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('sheet');
 
   protected readonly query = signal('');
@@ -474,20 +479,21 @@ export class TargetPicker {
     inject(DestroyRef).onDestroy(() => (this.returnFocusTo = null));
   }
 
-  protected choose(def: TargetDef): void {
+  protected choose(def: TargetDef, from: SelectionSource = 'picker'): void {
     if (def.kind === 'sun' && this.selection.selectedId() !== def.id) {
       this.pendingSun.set(true);
       return;
     }
-    this.apply(def.id);
+    this.apply(def.id, from);
   }
 
   protected confirmSun(): void {
-    this.apply('sun');
+    this.apply('sun', 'picker');
   }
 
-  private apply(id: string): void {
+  private apply(id: string, from: SelectionSource): void {
     this.selection.select(id);
+    this.analytics.targetSelected(id, from);
     this.query.set('');
     this.pendingSun.set(false);
     this.closed.emit();

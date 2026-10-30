@@ -12,13 +12,13 @@ const SPEECH_DURATION_MS = 3400;
   selector: 'app-moon-face',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg viewBox="-50 -50 100 100" class="face">
+    <svg viewBox="-50 -50 100 100" class="face" aria-hidden="true">
       <circle cx="-16" cy="-6" r="5" fill="#241f16" />
       <circle cx="16" cy="-6" r="5" fill="#241f16" />
       <ellipse cx="0" cy="16" rx="6" ry="8" fill="#241f16" />
     </svg>
     @if (speech(); as text) {
-      <div class="bubble">{{ text }}</div>
+      <div class="bubble" role="status">{{ text }}</div>
     }
   `,
   styles: `

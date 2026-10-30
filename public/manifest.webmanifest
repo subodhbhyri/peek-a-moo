@@ -1,7 +1,7 @@
 {
-  "name": "Find the moon",
-  "short_name": "Find the moon",
-  "description": "Point your phone at the sky and find the real moon.",
+  "name": "Peek-a-Moo",
+  "short_name": "Peek-a-Moo",
+  "description": "Point your phone at the sky and find the Moon, planets, stars, galaxies and the ISS.",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#030303",

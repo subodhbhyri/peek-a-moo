@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { GP_FIXTURE } from '../../core/gp/testing/gp-fixture';
+import { ANALYTICS_SINK } from '../../core/analytics/analytics.service';
 import { StatsService } from '../../core/personality/stats.service';
 import type { Availability } from '../../core/targets/availability';
 import { AvailabilityService } from '../../core/targets/availability.service';
@@ -48,7 +49,18 @@ describe('TargetPicker', () => {
     fixture.detectChanges();
   };
 
+  let sent: { name: string; props: Record<string, unknown> }[];
+
   beforeEach(() => {
+    sent = [];
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: ANALYTICS_SINK,
+          useValue: (name: string, props: Record<string, unknown>) => sent.push({ name, props }),
+        },
+      ],
+    });
     vi.useFakeTimers();
     // The Satellites section asks for orbit data as soon as the sheet shows it.
     vi.stubGlobal(
@@ -314,6 +326,22 @@ describe('TargetPicker', () => {
       expect(chips).toHaveLength(2);
       expect(chips[0]).toContain('ISS');
       expect(chips[1]).toContain('Mars');
+    });
+
+    it('analytics: a chip reports from "best-now", a row from "picker" (only target and from)', async () => {
+      create(false);
+      seed({ venus: av('venus', -4, 'up-visible') });
+      setOpen(true);
+      qa('.chip')[0].click();
+      expect(sent).toEqual([
+        { name: 'target_selected', props: { target: 'venus', from: 'best-now' } },
+      ]);
+      sent.length = 0;
+      setOpen(true);
+      rowFor('Jupiter').click();
+      expect(sent).toEqual([
+        { name: 'target_selected', props: { target: 'jupiter', from: 'picker' } },
+      ]);
     });
 
     it('a chip selects its target', () => {

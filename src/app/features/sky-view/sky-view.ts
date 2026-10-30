@@ -15,10 +15,16 @@ import {
   NOT_VISIBLE_NOTE,
   isNotNakedEye,
   satelliteFoundNote,
-  targetFoundLine,
   targetFoundToast,
 } from '../../core/personality/target-lines';
-import { FindLineContext, selectFindLine } from '../../core/personality/find-lines';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
+import { AlignmentService } from '../../core/calibration/alignment.service';
+import {
+  FindLineContext,
+  selectFindLine,
+  selectTargetLine,
+} from '../../core/personality/find-lines';
+import { AvailabilityService } from '../../core/targets/availability.service';
 import { StatsService } from '../../core/personality/stats.service';
 import { phaseEmoji } from '../../core/render/phase-emoji';
 import { SkyEngineService, SkyFrame } from '../../core/engine/sky-engine.service';
@@ -50,7 +56,12 @@ const MOVING_GLOW_RAMP_MS = 600;
   imports: [MoonFace, CornerStat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <canvas #canvas (pointerdown)="onPointerDown($event)"></canvas>
+    <canvas
+      #canvas
+      role="img"
+      aria-label="The sky. Move your phone to look around."
+      (pointerdown)="onPointerDown($event)"
+    ></canvas>
     <div #glow class="edge-glow"></div>
     <app-moon-face #face />
     @if (foundLine(); as line) {
@@ -103,6 +114,9 @@ export class SkyView implements AfterViewInit {
   private readonly stats = inject(StatsService);
   private readonly selection = inject(TargetSelectionService);
   private readonly cameraFov = inject(CameraFovService);
+  private readonly analytics = inject(AnalyticsService);
+  private readonly alignment = inject(AlignmentService);
+  private readonly availability = inject(AvailabilityService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
@@ -214,7 +228,16 @@ export class SkyView implements AfterViewInit {
     const target = this.engine.currentTarget();
     if (!target || target.id !== targetId) return;
     const updated = this.stats.recordFind(targetId, durationMs);
-    // The Moon is the only target with a face, lines and a phase emoji so far (Phase 7 adds the rest).
+    this.analytics.targetFound({
+      target: targetId,
+      durationMs,
+      visibility:
+        this.availability.ensure(this.selection.selected())?.visibility ??
+        (target.altitudeDeg > 0 ? 'up-visible' : 'below-horizon'),
+      camera: this.cameraFov.cameraOn(),
+      aligned: this.alignment.stored() !== null,
+    });
+    // The Moon has the face, the phase emoji and the tagged-line system; every other target has a pack.
     const phase = target.phase;
     if (this.selection.selected().kind === 'moon' && phase?.kind === 'moon') {
       const ctx: FindLineContext = {
@@ -231,10 +254,24 @@ export class SkyView implements AfterViewInit {
       this.faceRef().say(text);
       this.cornerRef().show({ durationMs, emoji: phaseEmoji(phase.name), targetId });
     } else {
-      // No face for anything but the Moon. One factual line plus the toast (Phase 7 adds voices).
+      // No face for anything but the Moon: a line from the target's own pack, plus the toast.
       const def = this.selection.selected();
-      const line = targetFoundLine(def.id);
-      if (line) this.showFoundLine(line);
+      const line = selectTargetLine(
+        def,
+        {
+          targetFinds: updated.perTarget[targetId]?.finds ?? 1,
+          sessionFindIndex: findIndex,
+          durationMs,
+          altitudeDeg: target.altitudeDeg,
+          magnitude: target.magnitude,
+          sunlit: target.satellite?.sunlit,
+        },
+        this.stats.stats().recentLines,
+      );
+      if (line) {
+        this.stats.recordLineShown(line.text);
+        this.showFoundLine(line.text);
+      }
       this.cornerRef().show({
         durationMs,
         emoji: '',

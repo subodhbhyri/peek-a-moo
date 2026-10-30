@@ -11,7 +11,10 @@ const URL_PARAM = 'target';
  */
 @Injectable({ providedIn: 'root' })
 export class TargetSelectionService {
-  readonly selectedId = signal<string>(initialId());
+  private readonly initial = initialSelection();
+  /** How the first target was chosen: a shared `?target=` link, or the default (including a remembered choice). */
+  readonly initialSource: 'link' | 'default' = this.initial.source;
+  readonly selectedId = signal<string>(this.initial.id);
   readonly selected = computed<TargetDef>(
     () => getTarget(this.selectedId()) ?? getTarget(DEFAULT_TARGET_ID)!,
   );
@@ -35,18 +38,18 @@ export class TargetSelectionService {
   }
 }
 
-function initialId(): string {
+function initialSelection(): { id: string; source: 'link' | 'default' } {
   try {
     const fromUrl = new URLSearchParams(window.location.search).get(URL_PARAM);
-    if (fromUrl && getTarget(fromUrl)) return fromUrl;
+    if (fromUrl && getTarget(fromUrl)) return { id: fromUrl, source: 'link' };
   } catch {
     // fall through
   }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && getTarget(stored)) return stored;
+    if (stored && getTarget(stored)) return { id: stored, source: 'default' };
   } catch {
     // fall through
   }
-  return DEFAULT_TARGET_ID;
+  return { id: DEFAULT_TARGET_ID, source: 'default' };
 }

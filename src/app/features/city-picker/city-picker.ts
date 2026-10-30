@@ -10,10 +10,11 @@ import { CITIES, City } from '../../core/data/cities';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="panel">
-      <p>Choose your city so the moon knows where to appear.</p>
+      <p>Choose your city so the sky knows where to look.</p>
       <input
         type="text"
         placeholder="Search cities…"
+        aria-label="Search cities"
         [value]="query()"
         (input)="query.set($any($event.target).value)"
         autocomplete="off"

@@ -285,6 +285,18 @@ describe('satellite labels', () => {
     });
   });
 
+  it('"approximate" orbit data (3-14 days) is not mentioned: only stale data (> 14 days) is labelled', () => {
+    const fresh = label(sat({ nextVisiblePass: pass(3 * H) }));
+    for (const days of [3, 7.5, 14]) {
+      expect(
+        label(sat({ nextVisiblePass: pass(3 * H), orbitAgeDays: days, orbitStale: false })),
+      ).toEqual(fresh);
+    }
+    expect(
+      label(sat({ nextVisiblePass: pass(3 * H), orbitAgeDays: 14.2, orbitStale: true })).label,
+    ).toContain('orbit data is 14 days old');
+  });
+
   it('no orbit data at all: "Orbit data unavailable"', () => {
     expect(label(sat({ orbitDataUnavailable: true }))).toEqual({
       label: 'Orbit data unavailable',

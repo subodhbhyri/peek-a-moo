@@ -53,7 +53,9 @@ target   {{ target()?.id }} az {{ target()?.azimuthDeg | number: '1.1-1' }}  alt
         (target()?.angularSizeDeg ?? 0) * 60 | number: '1.1-1'
       }}′
 Δ to target az {{ delta()?.az | number: '1.1-1' }}  alt {{ delta()?.alt | number: '1.1-1' }}@if (sat(); as s) {
-sat     NORAD {{ s.noradId }}  elements {{ s.ageDays | number: '1.1-1' }} d old  {{
+sat     NORAD {{ s.noradId }}  elements {{ s.ageDays | number: '1.1-1' }} d old ({{
+          s.stale ? 'stale' : s.approximate ? 'approximate' : 'fresh'
+        }})  {{
           s.sunlit ? 'sunlit' : 'in shadow'
         }}  range {{ s.rangeKm | number: '1.0-0' }} km}</pre>
     <select aria-label="Target" [value]="selection.selectedId()" (change)="pick($event)">
